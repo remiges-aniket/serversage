@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"strconv"
 	"sync"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver for PostgreSQL
 	"go.opentelemetry.io/otel"
@@ -33,7 +32,7 @@ const ( // Replace with your credentials
 	dsn                = "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
 	app_port           = ":8080"
 	otel_grpc_endpoint = "localhost:4317"
-	service_name_key   = "remiges.service"
+	service_name_key   = "remiges_app"
 	otel_collector     = "go.opentelemetry.io/contrib/examples/otel-collector"
 )
 
@@ -45,7 +44,8 @@ var (
 )
 
 type payload struct {
-	ctx *context.Context
+	ctx               *context.Context
+	httpStatusCounter metric.Int64Counter
 }
 
 func main() {
@@ -82,23 +82,17 @@ func main() {
 	tracer := otel.Tracer(otel_collector)
 	meter := otel.Meter(otel_collector)
 
-	// Attributes represent additional key-value descriptors that can be bound
-	// to a metric observer or recorder.
-	commonAttrs := []attribute.KeyValue{
-		attribute.String("attrA", "chocolate"),
-		attribute.String("attrB", "raspberry"),
-		attribute.String("attrC", "vanilla"),
-	}
-
-	runCount, err := meter.Int64Counter("run", metric.WithDescription("The number of times the iteration ran"))
+	httpStatusCounter, err := meter.Int64Counter(
+		"http.server.response.status",
+		metric.WithDescription("HTTP response status codes"),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// Work begins
 	ctx, span := tracer.Start(
 		ctx,
-		service_name_key,
-		trace.WithAttributes(commonAttrs...))
+		service_name_key)
 	defer span.End()
 
 	// Initialize PostgreSQL connection
@@ -113,21 +107,17 @@ func main() {
 		log.Fatalf("Database ping failed: %v", err)
 	}
 
-	for i := 0; i < 8; i++ {
-		_, iSpan := tracer.Start(ctx, fmt.Sprintf("Sample-%d", i))
-		runCount.Add(ctx, 1, metric.WithAttributes(attribute.String("org", "remiges tech")))
-		log.Printf("Sending test trace (%d / %d)\n", i+1, 8)
-
-		<-time.After(time.Second)
-		iSpan.End()
-	}
-
 	payload := &payload{
-		ctx: &ctx,
+		ctx:               &ctx,
+		httpStatusCounter: httpStatusCounter,
 	}
 	// HTTP routes
 	http.HandleFunc("/posts", payload.getAllPosts)
 	http.HandleFunc("/posts/", payload.postHandler)
+	http.HandleFunc("/exception/simulate", payload.simulateExceptionHandler)
+	http.HandleFunc("/exception/db-error", payload.simulateDBErrorHandler)
+	http.HandleFunc("/exception/custom", payload.customExceptionHandler)
+	http.HandleFunc("/exception/log-event", payload.logExceptionEventHandler)
 
 	log.Println("calling adding metrics")
 	log.Println("exit adding metrics")
@@ -140,11 +130,14 @@ func main() {
 // getAllPosts fetches all posts from the database
 func (pylod *payload) getAllPosts(w http.ResponseWriter, r *http.Request) {
 	log.Println("getAllPosts")
-
+	// pylod.httpStatusCounter.Add(r.Context(), 1, metric.WithAttributes(
+	// 	attribute.String("http.method", r.Method),
+	// 	attribute.Int("http.status_code", http.StatusOK),
+	// ))
 	tracer := otel.Tracer("getAllPosts")
-	_, span := tracer.Start(*pylod.ctx, "getAllPosts")
+	_, span := tracer.Start(*pylod.ctx, "/posts")
 	defer span.End()
-	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("http.path", "/posts"))
+	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("http.path", "/posts"), attribute.Int("http.status_code", http.StatusOK))
 
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -178,7 +171,10 @@ func (pylod *payload) getAllPosts(w http.ResponseWriter, r *http.Request) {
 
 // postHandler handles specific post-related requests (Create, Read by ID, Update, Delete)
 func (pylod *payload) postHandler(w http.ResponseWriter, r *http.Request) {
-
+	pylod.httpStatusCounter.Add(r.Context(), 1, metric.WithAttributes(
+		attribute.String("http.method", r.Method),
+		attribute.Int("http.status_code", http.StatusOK),
+	))
 	idStr := r.URL.Path[len("/posts/"):]
 	id, err := strconv.Atoi(idStr)
 	if err != nil && idStr != "" {
@@ -203,8 +199,8 @@ func (pylod *payload) postHandler(w http.ResponseWriter, r *http.Request) {
 // getPostByID fetches a post by its ID
 func getPostByID(w http.ResponseWriter, id int, ctx *context.Context) {
 	tracer := otel.Tracer("getPostByIDHandler")
-	_, iSpan := tracer.Start(*ctx, fmt.Sprintf("ID : %d", id))
-	iSpan.SetAttributes(attribute.String("query", "getPostByIDHandler"))
+	_, iSpan := tracer.Start(*ctx, fmt.Sprintf("/posts/%d", id))
+	iSpan.SetAttributes(attribute.String("query", "getPostByIDHandler"), attribute.Int("http.status_code", http.StatusOK))
 	iSpan.AddEvent("Querying database")
 
 	if id == 0 {
@@ -280,4 +276,58 @@ func deletePost(w http.ResponseWriter, id int) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// simulateExceptionHandler creates a sample exception for tracing.
+func (pylod *payload) simulateExceptionHandler(w http.ResponseWriter, r *http.Request) {
+	tracer := otel.Tracer("simulateExceptionHandler")
+	_, span := tracer.Start(*pylod.ctx, "SimulatedException")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("exception", "true"))
+	err := fmt.Errorf("simulated exception occurred")
+	span.RecordError(err)
+
+	http.Error(w, "Simulated exception", http.StatusInternalServerError)
+}
+
+// simulateDBErrorHandler simulates a database error.
+func (pylod *payload) simulateDBErrorHandler(w http.ResponseWriter, r *http.Request) {
+	tracer := otel.Tracer("simulateDBErrorHandler")
+	_, span := tracer.Start(*pylod.ctx, "SimulatedDBError")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("query", "SELECT * FROM non_existing_table"))
+	err := fmt.Errorf("database query failed due to missing table")
+	span.RecordError(err)
+
+	http.Error(w, "Simulated database error", http.StatusInternalServerError)
+}
+
+// customExceptionHandler logs a custom error with metadata.
+func (pylod *payload) customExceptionHandler(w http.ResponseWriter, r *http.Request) {
+	tracer := otel.Tracer("customExceptionHandler")
+	_, span := tracer.Start(*pylod.ctx, "CustomException")
+	defer span.End()
+
+	metadata := attribute.String("custom.meta", "Demo metadata for custom exception")
+	span.SetAttributes(metadata)
+
+	err := fmt.Errorf("custom exception example")
+	span.RecordError(err)
+
+	http.Error(w, "Custom exception logged", http.StatusInternalServerError)
+}
+
+// logExceptionEventHandler logs an event to Jaeger during an operation.
+func (pylod *payload) logExceptionEventHandler(w http.ResponseWriter, r *http.Request) {
+	tracer := otel.Tracer("logExceptionEventHandler")
+	_, span := tracer.Start(*pylod.ctx, "LogEventException")
+	defer span.End()
+
+	span.AddEvent("Critical issue occurred during process", trace.WithAttributes(
+		attribute.String("step", "critical-section"),
+	))
+
+	http.Error(w, "Exception event logged", http.StatusInternalServerError)
 }
