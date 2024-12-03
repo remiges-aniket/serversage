@@ -49,7 +49,6 @@ type payload struct {
 }
 
 func main() {
-	var err error
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
@@ -130,12 +129,8 @@ func main() {
 // getAllPosts fetches all posts from the database
 func (pylod *payload) getAllPosts(w http.ResponseWriter, r *http.Request) {
 	log.Println("getAllPosts")
-	// pylod.httpStatusCounter.Add(r.Context(), 1, metric.WithAttributes(
-	// 	attribute.String("http.method", r.Method),
-	// 	attribute.Int("http.status_code", http.StatusOK),
-	// ))
 	tracer := otel.Tracer("getAllPosts")
-	_, span := tracer.Start(*pylod.ctx, "/posts")
+	_, span := tracer.Start(*pylod.ctx, fmt.Sprintf("%s  %s", r.Method, "/posts"))
 	defer span.End()
 	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("http.path", "/posts"), attribute.Int("http.status_code", http.StatusOK))
 
@@ -281,23 +276,22 @@ func deletePost(w http.ResponseWriter, id int) {
 // simulateExceptionHandler creates a sample exception for tracing.
 func (pylod *payload) simulateExceptionHandler(w http.ResponseWriter, r *http.Request) {
 	tracer := otel.Tracer("simulateExceptionHandler")
-	_, span := tracer.Start(*pylod.ctx, "SimulatedException")
+	_, span := tracer.Start(*pylod.ctx, fmt.Sprintf("%s  %s", r.Method, "/exception/simulate"))
 	defer span.End()
-
-	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("exception", "true"))
+	span.SetAttributes(attribute.String("http.method", r.Method), attribute.String("http.path", "/exception/simulate"), attribute.Int("http.status_code", http.StatusExpectationFailed), attribute.String("exception", "true"))
 	err := fmt.Errorf("simulated exception occurred")
 	span.RecordError(err)
 
-	http.Error(w, "Simulated exception", http.StatusInternalServerError)
+	http.Error(w, "Simulated exception", http.StatusExpectationFailed)
 }
 
 // simulateDBErrorHandler simulates a database error.
 func (pylod *payload) simulateDBErrorHandler(w http.ResponseWriter, r *http.Request) {
 	tracer := otel.Tracer("simulateDBErrorHandler")
-	_, span := tracer.Start(*pylod.ctx, "SimulatedDBError")
+	_, span := tracer.Start(*pylod.ctx, fmt.Sprintf("%s  %s", r.Method, "/exception/db-error"))
 	defer span.End()
 
-	span.SetAttributes(attribute.String("query", "SELECT * FROM non_existing_table"))
+	span.SetAttributes(attribute.String("query", "SELECT * FROM non_existing_table"), attribute.Int("http.status_code", http.StatusInternalServerError))
 	err := fmt.Errorf("database query failed due to missing table")
 	span.RecordError(err)
 
@@ -307,27 +301,27 @@ func (pylod *payload) simulateDBErrorHandler(w http.ResponseWriter, r *http.Requ
 // customExceptionHandler logs a custom error with metadata.
 func (pylod *payload) customExceptionHandler(w http.ResponseWriter, r *http.Request) {
 	tracer := otel.Tracer("customExceptionHandler")
-	_, span := tracer.Start(*pylod.ctx, "CustomException")
+	_, span := tracer.Start(*pylod.ctx, fmt.Sprintf("%s  %s", r.Method, "/exception/custom"))
 	defer span.End()
 
 	metadata := attribute.String("custom.meta", "Demo metadata for custom exception")
-	span.SetAttributes(metadata)
+	span.SetAttributes(metadata, attribute.Int("http.status_code", http.StatusBadRequest))
 
 	err := fmt.Errorf("custom exception example")
 	span.RecordError(err)
 
-	http.Error(w, "Custom exception logged", http.StatusInternalServerError)
+	http.Error(w, "Custom exception logged", http.StatusBadRequest)
 }
 
 // logExceptionEventHandler logs an event to Jaeger during an operation.
 func (pylod *payload) logExceptionEventHandler(w http.ResponseWriter, r *http.Request) {
 	tracer := otel.Tracer("logExceptionEventHandler")
-	_, span := tracer.Start(*pylod.ctx, "LogEventException")
+	_, span := tracer.Start(*pylod.ctx, fmt.Sprintf("%s  %s", r.Method, "/exception/log-event"))
 	defer span.End()
 
 	span.AddEvent("Critical issue occurred during process", trace.WithAttributes(
-		attribute.String("step", "critical-section"),
+		attribute.String("step", "critical-section"), attribute.Int("http.status_code", http.StatusBadGateway),
 	))
 
-	http.Error(w, "Exception event logged", http.StatusInternalServerError)
+	http.Error(w, "Exception event logged", http.StatusBadGateway)
 }

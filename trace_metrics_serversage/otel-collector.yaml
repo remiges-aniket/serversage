@@ -8,7 +8,7 @@ receivers:
         endpoint: "0.0.0.0:4317"
       http:
         endpoint: "0.0.0.0:4318"
-   
+
   # Host metrics
   hostmetrics:
     root_path: /hostfs
@@ -68,13 +68,13 @@ receivers:
         mute_process_io_error: true
         mute_process_user_error: true
 # Collector metrics
-  # prometheus:
-  #   config:
-  #     scrape_configs:
-  #       - job_name: 'otelcol'
-  #         scrape_interval: 5s
-  #         static_configs:
-  #           - targets: ['0.0.0.0:8888']
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otelcol'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['0.0.0.0:8889']
 processors:
   batch:
 
@@ -92,10 +92,10 @@ exporters:
     tls:
       insecure: true
 
-  otlp/ja:
-    endpoint: "jaeger:14250"
-    tls:
-      insecure: true
+  # otlp/ja:
+  #   endpoint: "jaeger:14250"
+  #   tls:
+  #     insecure: true
 
   prometheus:
     endpoint: "0.0.0.0:9090"
@@ -110,8 +110,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [  otlp/jaeger,otlp/ja, debug, spanmetrics]
+      exporters: [otlp/jaeger, debug, spanmetrics]
     metrics:
-      receivers: [otlp, hostmetrics, spanmetrics]
+      receivers: [otlp, prometheus, hostmetrics, spanmetrics]
       processors: [batch]
       exporters: [prometheus, debug]

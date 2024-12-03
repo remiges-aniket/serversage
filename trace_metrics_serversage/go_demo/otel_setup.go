@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
@@ -35,10 +36,10 @@ func initResource() *resource.Resource {
 		extraResources, _ := resource.New(
 			context.Background(),
 			resource.WithOS(),
-			resource.WithTelemetrySDK(),
 			resource.WithProcess(),
 			resource.WithContainer(),
 			resource.WithHost(),
+			resource.WithTelemetrySDK(),
 			resource.WithAttributes(
 				service_name,
 			),
@@ -84,7 +85,9 @@ func initMeterProvider(ctx context.Context, conn *grpc.ClientConn) (func(context
 	}
 
 	meterProvider := metric.NewMeterProvider(
-		metric.WithReader(metric.NewPeriodicReader(metricExporter)),
+		metric.WithReader(metric.NewPeriodicReader(metricExporter,
+			// Default is 1m. Set to 3s for demonstrative purposes.
+			metric.WithInterval(3*time.Second))),
 		metric.WithResource(initResource()),
 	)
 	otel.SetMeterProvider(meterProvider)
@@ -92,7 +95,8 @@ func initMeterProvider(ctx context.Context, conn *grpc.ClientConn) (func(context
 	return meterProvider.Shutdown, nil
 }
 
-var meterProvider *metric.MeterProvider
+// ---------------------- Work Inprogress Below --------------------------------------
+// var meterProvider *metric.MeterProvider
 
 // func init() {
 // 	// Set up OpenTelemetry metrics and Prometheus exporter
