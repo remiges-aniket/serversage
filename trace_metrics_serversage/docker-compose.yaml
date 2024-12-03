@@ -40,7 +40,7 @@ services:
     logging: *logging
 
   otelcol:
-    image: otel/opentelemetry-collector-contrib:0.114.0
+    image: otel/opentelemetry-collector-contrib:latest
     container_name: otelcol
     deploy:
       resources:
@@ -59,7 +59,7 @@ services:
     logging: *logging
 
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:latest
     container_name: prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yaml
