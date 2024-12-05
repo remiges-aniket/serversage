@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	"test.co/demo/constants"
 )
 
 func initResource() *resource.Resource {
@@ -24,7 +25,7 @@ func initResource() *resource.Resource {
 			resource.WithHost(),
 			resource.WithTelemetrySDK(),
 			resource.WithAttributes(
-				semconv.ServiceNameKey.String(service_name_key),
+				semconv.ServiceNameKey.String(constants.SERVICE_NAME_KEY),
 			),
 		)
 		rsorce, _ = resource.Merge(
@@ -53,8 +54,6 @@ func initTracerProvider(ctx context.Context) (func(context.Context) error, error
 	)
 	otel.SetTracerProvider(tracerProvider)
 
-	// otel.SetTextMapPropagator(propagation.TraceContext{})
-
 	// Shutdown will flush any remaining spans and shut down the exporter.
 	return tracerProvider.Shutdown, nil
 }
@@ -76,55 +75,3 @@ func initMeterProvider(ctx context.Context) (func(context.Context) error, error)
 
 	return meterProvider.Shutdown, nil
 }
-
-// ---------------------- Work Inprogress Below --------------------------------------
-// var meterProvider *metric.MeterProvider
-
-// func init() {
-// 	// Set up OpenTelemetry metrics and Prometheus exporter
-// 	exporter, err := prometheus.New()
-// 	if err != nil {
-// 		log.Fatalf("failed to create Prometheus exporter: %v", err)
-// 	}
-
-// 	// Set the OpenTelemetry meter provider with the Prometheus exporter
-// 	meterProvider = metric.NewMeterProvider(metric.WithReader(exporter))
-
-// 	// Register the meter provider globally
-// 	otel.SetMeterProvider(meterProvider)
-// }
-
-// func recordMetrics() {
-// 	// Get the meter from the global meter provider
-// 	meter := meterProvider.Meter("go_demo_app")
-
-// 	// Create a counter to track the request counts
-// 	requestCount := meter.Int64Counter("http_server_requests_total", metric.WithDescription("Total HTTP requests"))
-
-// 	// Create a histogram to track the request duration
-// 	durationHistogram := meter.NewFloat64Histogram("http_server_request_duration_seconds", metric.WithDescription("Duration of HTTP requests"))
-
-// 	// Register an HTTP handler for Prometheus scraping
-// 	http.Handle("/metrics", promhttp.Handler())
-
-// 	// Wrap the handler to record metrics for each request
-// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-// 		// Record request count
-// 		requestCount.Add(context.Background(), 1, attribute.String("status", "200"))
-
-// 		// Start a timer to measure the duration of the request
-// 		start := time.Now()
-
-// 		// Simulate a simple response
-// 		time.Sleep(100 * time.Millisecond)
-
-// 		// Record the duration of the request
-// 		durationHistogram.Record(context.Background(), time.Since(start).Seconds(), attribute.String("method", r.Method))
-
-// 		// Send a simple response
-// 		w.Write([]byte("Hello, world!"))
-// 	})
-
-// 	// Start the HTTP server to serve metrics and handle requests
-// 	log.Fatal(http.ListenAndServe(":8080", nil))
-// }
