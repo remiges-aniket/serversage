@@ -1,82 +1,62 @@
-x-default-logging: &logging
-  driver: "json-file"
-  options:
-    max-size: "5m"
-    max-file: "2"
-    tag: "{{.Name}}"
+
+networks:
+  default:
+    name: http-db
+    driver: bridge
 
 services:
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  http-plus-db:
+    depends_on:
+      - jaeger
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    pid: "host"
+    ports:
+      - "8080:8080"
     volumes:
-      - "./jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
-    command:
-      - "--memory.max-traces=5000"
-      - "--query.ui-config=/etc/jaeger/jaeger-ui.json"
+      - /proc:/host/proc
+  go-auto:
+    depends_on:
+      - http-plus-db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
     environment:
-      - PROMETHEUS_SERVER_URL=http://prometheus:9090
-      - PROMETHEUS_QUERY_NORMALIZE_CALLS=true
-      - PROMETHEUS_QUERY_NORMALIZE_DURATION=true
-      - COLLECTOR_OTLP_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_GO_AUTO_TARGET_EXE=/app/main
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=httpPlusdb
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
     ports:
       - "16686:16686"
-    deploy:
-      resources:
-        limits:
-          memory: 400M
-    logging: *logging
-
-  otelcol:
-    image: otel/opentelemetry-collector-contrib:0.114.0
-    container_name: otelcol
-    deploy:
-      resources:
-        limits:
-          memory: 200M
-    command: ["--config=/conf/otel-collector.yaml"]
-    privileged: true
-    ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - 9090 # Prometheus metrics
-      - "14250:14250" # Jaeger gRPC
-      - 14268 # Jaeger HTTP
-      - 16686 # Jaeger UI
-    volumes:
-      - /:/hostfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./otel.yaml:/conf/otel-collector.yaml
-    logging: *logging
-
-  prometheus:
-    image: prom/prometheus:v2.55.1
-    container_name: prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yaml
-    volumes:
-      - ./prometh.yaml:/etc/prometheus/prometheus.yaml
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
     deploy:
       resources:
         limits:
           memory: 300M
-    # restart: unless-stopped
-    ports:
-      - "9090:9090"
-    logging: *logging
-
-  # Grafana : http://localhost:3000/grafana
-  grafana:
-    image: grafana/grafana:latest
-    deploy:
-      resources:
-        limits:
-          memory: 100M
     restart: unless-stopped
-    environment:
-      - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource"
-    volumes:
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - ./grafana/provisioning/:/etc/grafana/provisioning/
-    ports:
-      - "3000:3000"
-    logging: *logging
+
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres-container
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: postgres
+  #   volumes:
+  #     - ./posts_table_create.sql:/docker-entrypoint-initdb.d/posts_table_create.sql
+  #   ports:
+  #     - "5432:5432"
