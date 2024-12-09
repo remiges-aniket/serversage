@@ -20,3 +20,11 @@ curl localhost:8080/posts/1
 Which will query the dummy postgres database before that make sure to run all queries from file 'posts_table_create.sql' from parent directory.
 
 Every hit to the server should generate a trace that we can observe in [Jaeger UI](http://localhost:16686/)
+
+
+Extra commands to clean and build again:
+docker compose down --volumes
+docker image prune -f
+docker network prune -f
+docker builder prune -f
+docker compose up --build

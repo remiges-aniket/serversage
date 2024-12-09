@@ -1,65 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "bargauge",
-      "name": "Bar gauge",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.1.0"
-    },
-    {
-      "type": "panel",
-      "id": "piechart",
-      "name": "Pie chart",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -79,16 +18,14 @@
   "description": "A language-agnostic application performance management(APM) with OpenTelemetry, Grafana, and Prometheus.",
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "gnetId": 19419,
   "graphTooltip": 0,
-  "id": null,
+  "id": 9,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "",
       "fieldConfig": {
@@ -135,12 +72,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(service_name)",
@@ -152,7 +89,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -187,7 +124,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "fieldConfig": {
         "defaults": {
@@ -232,12 +169,12 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -251,7 +188,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -266,7 +203,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -281,7 +218,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -296,7 +233,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -311,7 +248,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -326,7 +263,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -341,7 +278,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -386,7 +323,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "request amount distribution",
       "fieldConfig": {
@@ -438,11 +375,12 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(span_name)",
@@ -458,7 +396,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "cumulative latency distribution",
       "fieldConfig": {
@@ -510,11 +448,12 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -531,7 +470,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "overall request rate per minute over last 3 minutes",
       "fieldConfig": {
@@ -575,12 +514,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}[3m])*60)",
@@ -596,7 +535,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "percentage of HTTP status 5xx in all requests",
       "fieldConfig": {
@@ -644,12 +583,12 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_status_code=~\"5.*|\", http_route=~\"$route\"})/sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"})",
@@ -664,7 +603,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "request rate per minute over last 3 minutes",
       "fieldConfig": {
@@ -679,6 +618,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -741,12 +681,12 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "10.0.2",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "sum(rate(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_route=~\"$route\"}[3m])*60)  by(span_name)",
@@ -763,7 +703,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "PR95 latency over last 3 minutes",
       "fieldConfig": {
@@ -778,6 +718,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -840,11 +781,12 @@
           "sort": "none"
         }
       },
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}[3m])) by (le, span_name))",
@@ -860,7 +802,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "by route and http status code",
       "fieldConfig": {
@@ -895,6 +837,12 @@
       "id": 6,
       "options": {
         "displayMode": "lcd",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
         "maxVizHeight": 300,
         "minVizHeight": 10,
         "minVizWidth": 0,
@@ -911,12 +859,12 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -933,7 +881,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "webstore-metrics"
       },
       "description": "Details of each API",
       "fieldConfig": {
@@ -1061,12 +1009,12 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "11.3.2",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1080,7 +1028,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}[3m])) by (le, service_name, http_method, http_route))",
@@ -1092,7 +1040,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "webstore-metrics"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -1156,22 +1104,24 @@
       "type": "table"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "text": "otelcol-contrib",
+          "value": "otelcol-contrib"
+        },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "webstore-metrics"
         },
         "definition": "label_values(service_name)",
-        "hide": 0,
         "includeAll": false,
         "label": "Application",
-        "multi": false,
         "name": "app",
         "options": [],
         "query": {
@@ -1180,18 +1130,22 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "webstore-metrics"
         },
         "definition": "label_values(http_route)",
-        "hide": 0,
         "includeAll": true,
         "label": "Route",
         "multi": true,
@@ -1203,20 +1157,18 @@
         },
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
         "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "OpenTelemetry APM",
-  "uid": "opentelemetry-apm",
+  "uid": "opentelemetry-apmf",
   "version": 1,
   "weekStart": ""
 }

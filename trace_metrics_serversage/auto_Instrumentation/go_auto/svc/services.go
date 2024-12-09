@@ -3,22 +3,25 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
+
+	"go.uber.org/zap"
 )
 
 // getAllPosts fetches all posts from the database
 func getAllPosts(w http.ResponseWriter, r *http.Request) {
-	log.Println("getAllPosts")
+	logger.Info("getAllPosts called")
 
 	if r.Method != http.MethodGet {
+		logger.Error(NOT_ALLOWED, zap.Error(fmt.Errorf("%s: %s", NOT_ALLOWED, r.Method)))
 		http.Error(w, NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 
 	rows, err := db.Query(GET_ALL_POSTS_QRY)
 	if err != nil {
+		logger.Error("Query error", zap.Error(err))
 		http.Error(w, fmt.Sprintf("Query error: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -28,12 +31,14 @@ func getAllPosts(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var post Post
 		if err := rows.Scan(&post.ID, &post.Title, &post.Content); err != nil {
+			logger.Error("Row scan error", zap.Error(err))
 			http.Error(w, fmt.Sprintf("Row scan error: %v", err), http.StatusInternalServerError)
 			return
 		}
 		posts = append(posts, post)
 	}
 
+	logger.Info("getAllPosts completed", zap.Int("posts", len(posts)))
 	w.Header().Set(CONTENT_TYPE, JSON)
 	json.NewEncoder(w).Encode(posts)
 }
@@ -46,6 +51,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, INVALID_ID, http.StatusBadRequest)
 		return
 	}
+	logger.Info("postHandler called", zap.Int("id", id))
 
 	switch r.Method {
 	case http.MethodGet:
@@ -68,13 +74,16 @@ func getPostByID(w http.ResponseWriter, id int) {
 		http.Error(w, ID_REQUIRED, http.StatusBadRequest)
 		return
 	}
+	logger.Info("getPostByID called", zap.Int("id", id))
 
 	err := db.QueryRow(GET_POST_BY_ID_QRY, id).Scan(&post.ID, &post.Title, &post.Content)
 	if err != nil {
+		logger.Error("QueryRow error", zap.Error(err))
 		http.Error(w, fmt.Sprintf("QueryRow error: %v", err), http.StatusNotFound)
 		return
 	}
 
+	logger.Info("getPostByID completed", zap.Int("id", id))
 	w.Header().Set(CONTENT_TYPE, JSON)
 	json.NewEncoder(w).Encode(post)
 }
