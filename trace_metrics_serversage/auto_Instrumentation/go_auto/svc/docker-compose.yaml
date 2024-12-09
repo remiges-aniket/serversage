@@ -25,13 +25,14 @@ services:
       - /proc:/host/proc
 
   go-auto:
+    image: otel/autoinstrumentation-go
     depends_on:
       - serversage
       - jaeger
       - prometheus
-    build:
-      context: ../..
-      dockerfile: Dockerfile
+    # build:
+    #   context: ../..
+    #   dockerfile: Dockerfile
     deploy:
       resources:
         limits:
@@ -66,19 +67,21 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686"
-      - "14268:14268"
-      - "4318"
+    volumes:
+      - "./jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
+    command:
+      - "--memory.max-traces=5000"
+      - "--query.ui-config=/etc/jaeger/jaeger-ui.json"
     environment:
       - METRICS_STORAGE_TYPE=prometheus
       - PROMETHEUS_SERVER_URL=http://prometheus:9090
-      - PROMETHEUS_QUERY_NAMESPACE=${PROMETHEUS_QUERY_NAMESPACE:-}
-      - PROMETHEUS_QUERY_DURATION_UNIT=${PROMETHEUS_QUERY_DURATION_UNIT:-}
       - PROMETHEUS_QUERY_NORMALIZE_CALLS=true
       - PROMETHEUS_QUERY_NORMALIZE_DURATION=true
       - COLLECTOR_OTLP_ENABLED=true
       - LOG_LEVEL=debug
+    ports:
+      - "16686:16686"
+      - "4317"
     deploy:
       resources:
         limits:
@@ -141,11 +144,15 @@ services:
           memory: 150M
     command: --config /conf/otel-collector.yml
     privileged: true
-    ports:
-      - "4317:4317"
-      - "4333:4318"
-      - "8888" # for prometheus
-      - "9124" # for prometheus
+    # ports:  // it is working without giving ports
+    #   - "4317:4317"
+    #   - "4333:4318"
+    #   - "8888" # for prometheus
+    #   - "9124" # for prometheus
+    #   - 9090 # Prometheus metrics
+    #   - "14250:14250" # Jaeger gRPC
+    #   - 14268 # Jaeger HTTP
+    #   - 16686 # Jaeger UI
     volumes:
       - /:/hostfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro

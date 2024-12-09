@@ -5,10 +5,10 @@ both visible in the trace.
 
 For testing auto instrumentation, we can use the docker compose.
 
-To run the example, bring up the services using the command.
+To run the example, bring up the services using the command. Go inside folder `./go_auto/svc` open terminal in this dir
 
 ```
-docker compose up
+docker compose up --build
 ```
 
 Now, you can hit the server using the below commands

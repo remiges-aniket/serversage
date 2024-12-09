@@ -8,15 +8,74 @@ receivers:
         endpoint: "0.0.0.0:4317"
       http:
         endpoint: "0.0.0.0:4318"
-
-  prometheus/serversage:
+  httpcheck:
+    targets:
+      - endpoint: http://localhost:8080
+  hostmetrics:
+    root_path: /hostfs
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+      load:
+      filesystem:
+        exclude_mount_points:
+          mount_points:
+            - /dev/*
+            - /proc/*
+            - /sys/*
+            - /run/k3s/containerd/*
+            - /var/lib/docker/*
+            - /var/lib/kubelet/*
+            - /snap/*
+          match_type: regexp
+        exclude_fs_types:
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
+          match_type: strict
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network:
+      paging:
+      processes:
+      process:
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+  # Collector metrics
+  prometheus:
     config:
       scrape_configs:
         - job_name: 'otel_contrib'
           scrape_interval: 5s
           static_configs:
             - targets: ['0.0.0.0:8888']
-
 processors:
   batch:
   filter/serversage:
@@ -56,6 +115,6 @@ service:
       processors: [batch]
       exporters: [debug,otlp/jaeger]
     metrics:
-      receivers: [otlp, prometheus/serversage]
+      receivers: [hostmetrics,httpcheck, otlp, prometheus]
       processors: [batch,filter/serversage]
       exporters: [debug,prometheus]
