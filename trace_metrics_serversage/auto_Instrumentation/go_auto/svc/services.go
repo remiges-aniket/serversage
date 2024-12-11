@@ -5,24 +5,32 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"go.uber.org/zap"
 )
 
 // getAllPosts fetches all posts from the database
 func getAllPosts(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	statusCode := http.StatusOK
+
 	logger.Info("getAllPosts called")
 
 	if r.Method != http.MethodGet {
+		statusCode = http.StatusMethodNotAllowed
 		logger.Error(NOT_ALLOWED, zap.Error(fmt.Errorf("%s: %s", NOT_ALLOWED, r.Method)))
-		http.Error(w, NOT_ALLOWED, http.StatusMethodNotAllowed)
+		http.Error(w, NOT_ALLOWED, statusCode)
+		recordMetrics(r, start, statusCode)
 		return
 	}
 
 	rows, err := db.Query(GET_ALL_POSTS_QRY)
 	if err != nil {
+		statusCode = http.StatusInternalServerError
 		logger.Error("Query error", zap.Error(err))
 		http.Error(w, fmt.Sprintf("Query error: %v", err), http.StatusInternalServerError)
+		recordMetrics(r, start, statusCode)
 		return
 	}
 	defer rows.Close()
@@ -31,12 +39,16 @@ func getAllPosts(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var post Post
 		if err := rows.Scan(&post.ID, &post.Title, &post.Content); err != nil {
+			statusCode = http.StatusInternalServerError
 			logger.Error("Row scan error", zap.Error(err))
 			http.Error(w, fmt.Sprintf("Row scan error: %v", err), http.StatusInternalServerError)
+			recordMetrics(r, start, statusCode)
 			return
 		}
 		posts = append(posts, post)
 	}
+
+	recordMetrics(r, start, statusCode)
 
 	logger.Info("getAllPosts completed", zap.Int("posts", len(posts)))
 	w.Header().Set(CONTENT_TYPE, JSON)
@@ -45,6 +57,9 @@ func getAllPosts(w http.ResponseWriter, r *http.Request) {
 
 // postHandler handles specific post-related requests (Create, Read by ID, Update, Delete)
 func postHandler(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+	statusCode := http.StatusOK
+
 	idStr := r.URL.Path[len(POST_BY_ID):]
 	id, err := strconv.Atoi(idStr)
 	if err != nil && idStr != EMPTY {
@@ -63,8 +78,11 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		deletePost(w, id)
 	default:
-		http.Error(w, NOT_ALLOWED, http.StatusMethodNotAllowed)
+		statusCode = http.StatusMethodNotAllowed
+		recordMetrics(r, start, statusCode)
+		http.Error(w, NOT_ALLOWED, statusCode)
 	}
+	recordMetrics(r, start, statusCode)
 }
 
 // getPostByID fetches a post by its ID

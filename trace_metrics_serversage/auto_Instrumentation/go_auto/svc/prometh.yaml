@@ -17,9 +17,9 @@ scrape_configs:
   static_configs:
   - targets: ['localhost:9090']
 
-# - job_name:  otel_collector_receiver
-#   static_configs:
-#   - targets: ['collector:8888']
+- job_name:  serversage_app
+  static_configs:
+  - targets: ['host.docker.internal:8080']
 
 - job_name: otel_contrib_exporter
   static_configs:

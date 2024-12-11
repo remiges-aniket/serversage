@@ -1,19 +1,18 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver for PostgreSQL
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/trace"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +23,29 @@ type Post struct {
 	Content string `json:"content"`
 }
 
+// Define metrics
 var (
+	httpRequestDuration = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_server_request_duration_seconds_count",
+			Help: "Total duration of HTTP requests in seconds.",
+		},
+		[]string{"method", "path"},
+	)
+
+	httpResponseStatus = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_response_status_code",
+			Help: "Count of HTTP response status codes.",
+		},
+		[]string{"status_code"},
+	)
+)
+var (
+	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "serversage_processed_ops_total",
+		Help: "The total number of processed events",
+	})
 	db     *sql.DB
 	DNS    string
 	logger *zap.Logger
@@ -58,14 +79,16 @@ func init() {
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		postgresIP, postgresPort, postgresUser, postgresPassword, postgresDB,
 	)
+
+	// Register metrics with Prometheus
+	prometheus.MustRegister(httpRequestDuration)
+	prometheus.MustRegister(httpResponseStatus)
 }
 
 func main() {
 	var (
 		err error
 	)
-	initTracer()
-
 	logger, err = zap.NewDevelopment()
 	if err != nil {
 		fmt.Printf("error creating zap logger, error:%v", err)
@@ -90,6 +113,7 @@ func main() {
 
 func setupHandler() *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc(ALL_POSTS, getAllPosts)
 	mux.HandleFunc(POST_BY_ID, postHandler)
 	mux.HandleFunc(SIMULATE_EXCEPTION, simulateExceptionHandler)
@@ -119,25 +143,8 @@ func setupLogharbour() {
 	// logger.Debug0().LogActivity("debug0 test", nil)
 }
 
-func initTracer() {
-
-	ctx := context.Background()
-
-	client := otlptracehttp.NewClient()
-
-	otlpTraceExporter, err := otlptrace.New(ctx, client)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	batchSpanProcessor := trace.NewBatchSpanProcessor(otlpTraceExporter)
-
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithSpanProcessor(batchSpanProcessor),
-		//trace.WithSampler(sdktrace.AlwaysSample()), - please check TracerProvider.WithSampler() implementation for details.
-	)
-
-	otel.SetTracerProvider(tracerProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
-		propagation.TraceContext{}, propagation.Baggage{}))
+func recordMetrics(r *http.Request, start time.Time, statusCode int) {
+	// Record metrics
+	httpRequestDuration.WithLabelValues(r.Method, r.URL.Path).Add(time.Since(start).Seconds())
+	httpResponseStatus.WithLabelValues(strconv.Itoa(statusCode)).Inc()
 }

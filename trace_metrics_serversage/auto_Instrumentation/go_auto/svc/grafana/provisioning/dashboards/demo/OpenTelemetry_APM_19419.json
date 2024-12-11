@@ -19,13 +19,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 9,
+  "id": 3,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "",
       "fieldConfig": {
@@ -72,15 +72,15 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(service_name)",
+          "expr": "sum(http_server_request_duration_seconds_count{ http_route=~\"$route\"}) by(http_route)",
           "instant": false,
           "legendFormat": "{{label_name}}",
           "range": true,
@@ -89,11 +89,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(service_name)",
+          "expr": "sum(http_server_request_duration_seconds_count{ http_route=~\"$route\"}) by(http_route)",
           "hide": false,
           "instant": true,
           "legendFormat": "__auto",
@@ -124,7 +124,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "fieldConfig": {
         "defaults": {
@@ -169,16 +169,16 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^2.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{ http_response_status_code=~\"^2.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "instant": false,
           "legendFormat": "Http Status 2XX",
@@ -188,11 +188,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^3.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^3.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -203,11 +203,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^4.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^4.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -218,11 +218,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^5.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^5.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -233,11 +233,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^2.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^2.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -248,11 +248,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^3.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^3.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -263,11 +263,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^4.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^4.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -278,11 +278,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_status_code=~\"^5.*\", http_route=~\"$route\"}) by(http_status_code)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code=~\"^5.*\", http_route=~\"$route\"}) by(http_response_status_code)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -323,7 +323,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "request amount distribution",
       "fieldConfig": {
@@ -375,15 +375,15 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(span_name)",
+          "expr": "sum(http_server_request_duration_seconds_count{ http_route=~\"$route\"}) by(span_name)",
           "instant": false,
           "legendFormat": "{{label_name}}",
           "range": true,
@@ -396,7 +396,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "cumulative latency distribution",
       "fieldConfig": {
@@ -448,16 +448,16 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_sum{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(span_name)",
+          "expr": "sum(http_server_request_duration_seconds_sum{ http_route=~\"$route\"}) by(http_response_status_code)",
           "instant": true,
           "legendFormat": "{{label_name}}",
           "range": false,
@@ -470,7 +470,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "overall request rate per minute over last 3 minutes",
       "fieldConfig": {
@@ -514,15 +514,15 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "sum(rate(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}[3m])*60)",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{ http_route=~\"$route\"}[3m])*60)",
           "hide": false,
           "instant": false,
           "range": true,
@@ -535,7 +535,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "percentage of HTTP status 5xx in all requests",
       "fieldConfig": {
@@ -583,15 +583,15 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_status_code=~\"5.*|\", http_route=~\"$route\"})/sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"})",
+          "expr": "sum(http_server_request_duration_seconds_count{ http_response_status_code=~\"5.*|\", http_route=~\"$route\"})/sum(http_server_request_duration_seconds_count{ http_route=~\"$route\"})",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -603,7 +603,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "request rate per minute over last 3 minutes",
       "fieldConfig": {
@@ -681,15 +681,15 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "sum(rate(duration_milliseconds_count{service_name=\"$app\", span_kind=\"SPAN_KIND_SERVER\", http_route=~\"$route\"}[3m])*60)  by(span_name)",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{ http_route=~\"$route\"}[3m])*60)  by(http_route)",
           "hide": false,
           "instant": false,
           "legendFormat": "{{label_name}}",
@@ -703,7 +703,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "PR95 latency over last 3 minutes",
       "fieldConfig": {
@@ -781,15 +781,15 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}[3m])) by (le, span_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{ http_route=~\"$route\"}[3m])) by (le, span_name))",
           "instant": false,
           "legendFormat": "{{label_name}}",
           "range": true,
@@ -802,7 +802,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "by route and http status code",
       "fieldConfig": {
@@ -859,18 +859,18 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sort_desc(duration_milliseconds_sum{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_status_code!=\"\", http_route=~\"$route\"} / duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_status_code!=\"\", http_route=~\"$route\"})",
+          "expr": "sort_desc(http_server_request_duration_seconds_sum{ http_response_status_code!=\"\", http_route=~\"$route\"} / http_server_request_duration_seconds_count{ http_response_status_code!=\"\", http_route=~\"$route\"})",
           "instant": true,
-          "legendFormat": "[{{http_status_code}}] {{span_name}}",
+          "legendFormat": "[{{http_response_status_code}}] {{span_name}}",
           "range": false,
           "refId": "A"
         }
@@ -881,7 +881,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "webstore-metrics"
+        "uid": "ae5poh188xo1se"
       },
       "description": "Details of each API",
       "fieldConfig": {
@@ -1009,16 +1009,16 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.3.2",
+      "pluginVersion": "11.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(rate(duration_milliseconds_count{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}[3m])*60) by(service_name, http_method, http_route)",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{ http_route=~\"$route\"}[3m])*60) by( http_method, http_route)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1028,10 +1028,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}[3m])) by (le, service_name, http_method, http_route))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}[3m])) by ( http_method, http_route))",
           "hide": false,
           "instant": false,
           "range": true,
@@ -1040,11 +1040,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "webstore-metrics"
+            "uid": "ae5poh188xo1se"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(duration_milliseconds_count{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\", http_status_code!~\"2.*|3.*\"}) by(service_name, http_method, http_route) / sum(duration_milliseconds_count{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}) by(service_name, http_method, http_route)",
+          "expr": "sum(http_server_request_duration_seconds_count{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\", http_response_status_code!~\"2.*|3.*\"}) by(service_name, http_method, http_route) / sum(http_server_request_duration_seconds_count{service_name=\"$app\", http_route=~\"$route\", span_kind=\"SPAN_KIND_SERVER\"}) by(service_name, http_method, http_route)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1076,8 +1076,8 @@
               "Value #PR95": 8,
               "Value #Request Rate": 6,
               "http_method": 3,
+              "http_response_status_code": 4,
               "http_route": 2,
-              "http_status_code": 4,
               "service_name": 1
             },
             "renameByName": {
@@ -1094,8 +1094,8 @@
               "Value #PR95": "PR95 Latency",
               "Value #Request Rate": "Request Rate",
               "http_method": "Method",
+              "http_response_status_code": "Status Code",
               "http_route": "Route",
-              "http_status_code": "Status Code",
               "service_name": "Application"
             }
           }
@@ -1112,12 +1112,12 @@
     "list": [
       {
         "current": {
-          "text": "otelcol-contrib",
-          "value": "otelcol-contrib"
+          "text": "bankapp",
+          "value": "bankapp"
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "webstore-metrics"
+          "uid": "ae5poh188xo1se"
         },
         "definition": "label_values(service_name)",
         "includeAll": false,
@@ -1143,7 +1143,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "webstore-metrics"
+          "uid": "ae5poh188xo1se"
         },
         "definition": "label_values(http_route)",
         "includeAll": true,
@@ -1162,13 +1162,13 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "OpenTelemetry APM",
-  "uid": "opentelemetry-apmf",
-  "version": 1,
+  "uid": "opentelemetry-apm",
+  "version": 5,
   "weekStart": ""
 }

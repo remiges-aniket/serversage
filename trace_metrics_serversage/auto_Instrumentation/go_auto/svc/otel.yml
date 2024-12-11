@@ -75,7 +75,7 @@ receivers:
         - job_name: 'otel_contrib'
           scrape_interval: 5s
           static_configs:
-            - targets: ['0.0.0.0:8888']
+            - targets: ['0.0.0.0:8888','host.docker.internal:8080']
 processors:
   batch:
   filter/serversage:
@@ -97,6 +97,8 @@ extensions:
     endpoint: 0.0.0.0:55679
     # Filter out prometheus scraping meta-metrics.
 
+connectors:
+  spanmetrics:
 
 exporters:
   debug:
@@ -113,8 +115,8 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug,otlp/jaeger]
+      exporters: [debug,otlp/jaeger,spanmetrics]
     metrics:
-      receivers: [hostmetrics,httpcheck, otlp, prometheus]
+      receivers: [hostmetrics,httpcheck, otlp, prometheus,spanmetrics]
       processors: [batch,filter/serversage]
       exporters: [debug,prometheus]
