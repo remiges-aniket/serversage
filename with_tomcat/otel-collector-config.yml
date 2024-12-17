@@ -1,27 +1,104 @@
 receivers:
   otlp:
     protocols:
-      grpc:
-      http:
+      grpc: # Enable OTLP over gRpc
+        endpoint: "0.0.0.0:4317"
+      http: # Enable OTLP over HTTP
+        endpoint: "0.0.0.0:4318"
+  httpcheck:
+    targets:
+      - endpoint: http://localhost:8080
+  hostmetrics:
+    root_path: /hostfs
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+      load:
+      filesystem:
+        exclude_mount_points:
+          mount_points:
+            - /dev/*
+            - /proc/*
+            - /sys/*
+            - /run/k3s/containerd/*
+            - /var/lib/docker/*
+            - /var/lib/kubelet/*
+            - /snap/*
+          match_type: regexp
+        exclude_fs_types:
+          fs_types:
+            - autofs
+            - binfmt_misc
+            - bpf
+            - cgroup2
+            - configfs
+            - debugfs
+            - devpts
+            - devtmpfs
+            - fusectl
+            - hugetlbfs
+            - iso9660
+            - mqueue
+            - nsfs
+            - overlay
+            - proc
+            - procfs
+            - pstore
+            - rpc_pipefs
+            - securityfs
+            - selinuxfs
+            - squashfs
+            - sysfs
+            - tracefs
+          match_type: strict
+      memory:
+        metrics:
+          system.memory.utilization:
+            enabled: true
+      network:
+      paging:
+      processes:
+      process:
+        mute_process_exe_error: true
+        mute_process_io_error: true
+        mute_process_user_error: true
+
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
 
 exporters:
-  jaeger:
-    endpoint: "http://jaeger:14250"
+  debug:
+  otlp/jaeger:
+    endpoint: "http://jaeger:4317"
     tls:
       insecure: true
   prometheus:
-    endpoint: "0.0.0.0:8888"
+    endpoint: "0.0.0.0:8889"
 
 processors:
   batch:
+connectors:
+  spanmetrics:
 
 service:
+  extensions: [health_check, pprof, zpages]
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [jaeger]
+      exporters: [debug,otlp/jaeger,spanmetrics]
     metrics:
+      receivers: [otlp,hostmetrics,httpcheck,spanmetrics]
+      processors: [batch]
+      exporters: [debug,prometheus]
+    logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [prometheus]
+      exporters: [debug,otlp/jaeger]
