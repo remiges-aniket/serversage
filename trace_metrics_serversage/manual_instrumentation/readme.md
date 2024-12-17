@@ -4,3 +4,5 @@
 `To stop the Serversage:  `
 
 2. docker compose down
+
+Api to hit for generate data:
