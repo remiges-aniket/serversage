@@ -5,6 +5,7 @@ ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/release
 
 # Copy your sample .war application
 COPY sample.war /usr/local/tomcat/webapps/
+# COPY sample_old.war /usr/local/tomcat/webapps/
 
 # Set environment variables for OpenTelemetry
 ENV JAVA_OPTS="-javaagent:/usr/local/tomcat/opentelemetry-javaagent.jar \

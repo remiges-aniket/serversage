@@ -115,7 +115,6 @@ services:
           memory: 150M
         reservations:
           memory: 100M
-    # restart: unless-stopped
     ports:
       - "9090:9090"
 
