@@ -35,10 +35,10 @@ exporters:
   debug:
     verbosity: detailed
   # Data sources: traces
-  otlp/jaeger:
-    endpoint: "http://172.19.0.4:4317"
-    tls:
-      insecure: true
+  # otlp/jaeger:
+  #   endpoint: "http://172.19.0.4:4317"
+  #   tls:
+  #     insecure: true
   # Data sources: metrics
   prometheus:
     endpoint: "otel-collector:8889"
@@ -58,7 +58,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [otlp/jaeger, spanmetrics, otlp, debug]
+      exporters: [spanmetrics, otlp, debug]
     metrics:
       receivers: [otlp,spanmetrics]
       processors: [memory_limiter, resourcedetection, batch]
