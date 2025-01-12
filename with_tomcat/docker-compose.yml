@@ -1,22 +1,10 @@
 version: '3.9'
 
-services:
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel-collector
-    deploy:
-      resources:
-        limits:
-          memory: 100M
-    ports:
-      - "4317:4317"  # OTLP gRPC
-      - "8889:8889"  # Prometheus metrics
-    volumes:
-      - /:/hostfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
-    command: ["--config", "/etc/otel-collector-config.yml"]
+networks:
+  shared_network_NDML:
+    external: true
 
+services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
@@ -30,8 +18,9 @@ services:
         limits:
           memory: 100M
     ports:
+      - "4317:4317"
       - "16686:16686" # Jaeger UI
-      - "14250:14250" # Jaeger gRPC receiver
+      # - "14268:14268" # Jaeger gRPC receiver
 
   prometheus:
     image: prom/prometheus:latest
@@ -60,33 +49,16 @@ services:
     ports:
       - "3000:3000"
 
-  tomcat-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: tomcat-app
-    environment:
-      POSTGRES_HOST_IP: postgres
-      POSTGRES_PORT: "5433"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "postgres"
-    ports:
-      - "8080:8080"
-    depends_on:
-      - otel-collector
-      - postgres
-
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    command: ["postgres", "-p", "5433"]
-    volumes:
-      - ./posts_table_create.sql:/docker-entrypoint-initdb.d/posts_table_create.sql
-    ports:
-      - "5433:5433"
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: postgres
+  #   command: ["postgres", "-p", "5433"]
+  #   volumes:
+  #     - ./posts_table_create.sql:/docker-entrypoint-initdb.d/posts_table_create.sql
+  #   ports:
+  #     - "5433:5433"

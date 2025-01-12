@@ -1,17 +1,15 @@
-# Copyright The OpenTelemetry Authors
-# SPDX-License-Identifier: Apache-2.0
-
 receivers:
   otlp:
     protocols:
-      grpc:
+      grpc: # Enable OTLP over gRpc
         endpoint: "0.0.0.0:4317"
-      http:
+      http: # Enable OTLP over HTTP
         endpoint: "0.0.0.0:4318"
-
-  # Host metrics
+  httpcheck:
+    targets:
+      - endpoint: http://10.250.10.11:8080
   hostmetrics:
-    root_path: /hostfs
+    #    root_path: /hostfs
     scrapers:
       cpu:
         metrics:
@@ -67,16 +65,6 @@ receivers:
         mute_process_exe_error: true
         mute_process_io_error: true
         mute_process_user_error: true
-# Collector metrics
-  prometheus:
-    config:
-      scrape_configs:
-        - job_name: 'otelcol'
-          scrape_interval: 5s
-          static_configs:
-            - targets: ['0.0.0.0:8889']
-processors:
-  batch:
 
 extensions:
   health_check:
@@ -84,23 +72,20 @@ extensions:
     endpoint: 0.0.0.0:1777
   zpages:
     endpoint: 0.0.0.0:55679
+
 exporters:
   debug:
-
   otlp/jaeger:
-    endpoint: "jaeger:4317"
+    endpoint: "10.250.10.112:4317"
     tls:
       insecure: true
-
-  # otlp/ja:
-  #   endpoint: "jaeger:14250"
-  #   tls:
-  #     insecure: true
-
   prometheus:
     endpoint: "0.0.0.0:9090"
-    # tls:
-    #   insecure: true
+    #tls:
+    #  insecure: true
+
+processors:
+  batch:
 connectors:
   spanmetrics:
 
@@ -110,8 +95,12 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger, debug, spanmetrics]
+      exporters: [debug, otlp/jaeger, spanmetrics]
     metrics:
-      receivers: [otlp, prometheus, hostmetrics, spanmetrics]
+      receivers: [otlp, hostmetrics, httpcheck, spanmetrics]
       processors: [batch]
-      exporters: [prometheus, debug]
+      exporters: [debug, prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp/jaeger]

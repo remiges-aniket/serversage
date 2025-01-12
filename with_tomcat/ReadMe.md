@@ -3,7 +3,7 @@ Run the project in docker using below command:
 
 Check out the sample Tomcat app below and play around with it to generate some load.
 
-Access the services:
+Access the services: Run both compose file from inside 1st then outside one
 
 Application: http://localhost:8080/sample/
 Jaeger UI: http://localhost:16686

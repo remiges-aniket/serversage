@@ -2,6 +2,6 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'postgres'
+  - job_name: 'OTEL_pg'
     static_configs:
-      - targets: ['postgres_exporter:9187']
+      - targets: ['otelcol:9464']
