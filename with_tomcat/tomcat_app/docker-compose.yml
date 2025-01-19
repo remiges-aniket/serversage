@@ -20,20 +20,20 @@ services:
       # - "4318"
 
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: otel-collector
-    deploy:
-      resources:
-        limits:
-          memory: 100M
-    ports:
-      # - "4318:4318"  # OTLP http
-      - "8889:8889"  # Prometheus metrics
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
-    command: ["--config", "/etc/otel-collector-config.yml"]
+  # otel-collector:
+  #   image: otel/opentelemetry-collector-contrib:latest
+  #   container_name: otel-collector
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 100M
+  #   ports:
+  #     # - "4318:4318"  # OTLP http
+  #     - "8889:8889"  # Prometheus metrics
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+  #   command: ["--config", "/etc/otel-collector-config.yml"]
 
 
 

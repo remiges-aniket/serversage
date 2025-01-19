@@ -60,7 +60,7 @@ service:
       processors: [memory_limiter, resourcedetection, batch]
       exporters: [spanmetrics, otlp, debug]
     metrics:
-      receivers: [otlp,spanmetrics]
+      receivers: [otlp, spanmetrics, hostmetrics]
       processors: [memory_limiter, resourcedetection, batch]
       exporters: [prometheus, otlp]
     logs:

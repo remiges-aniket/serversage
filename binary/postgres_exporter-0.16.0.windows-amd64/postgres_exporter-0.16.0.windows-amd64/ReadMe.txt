@@ -1,0 +1,1 @@
+DATA_SOURCE_NAME="postgresql://postgres_exporter:password@127.0.0.1:5432/postgres?sslmode=disable" ./postgres_exporter.exe --extend.query-path="queries.yaml"
