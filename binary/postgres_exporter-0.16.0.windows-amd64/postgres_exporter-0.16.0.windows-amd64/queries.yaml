@@ -299,8 +299,8 @@ pg_active_lockedsql:
         description: "The number of processes"
 pg_active_slowsql:
   query: |
-    select datname,usename,count(1) slowsql_count          
-    from pg_stat_activity where state not in('idle') and query !='' 
+    select datname,usename,count(1) slowsql_count
+    from pg_stat_activity where state not in('idle') and query !=''
     and extract(epoch from (now() - query_start)) > 60*5 group by datname,usename order by count(1) desc;
   metrics:
     - datname:
@@ -312,6 +312,29 @@ pg_active_slowsql:
     - slowsql_count:
         usage: "COUNTER"
         description: "the numbers of slow sqls"
+pg_active_slowqry:
+  query: |
+    select (now()-t1.query_start) as qry_ex_time, t1.query,t1.pid, t1.state,t2.rolname,t1.datname
+    from pg_stat_activity t1 , pg_roles t2 where t1.query!= '' and t1.usesysid = t2.oid ORDER BY qry_ex_time DESC;
+  metrics:
+    - qry_ex_time:
+        usage: "LABEL"
+        description: "Query execution time"
+    - query:
+        usage: "LABEL"
+        description: "query"
+    - pid:
+        usage: "COUNTER"
+        description: "process id of query"
+    - state:
+        usage: "LABEL"
+        description: "state of query"
+    - rolname:
+        usage: "LABEL"
+        description: "rolname of user related to query"
+    - datname:
+        usage: "LABEL"
+        description: "data base name of query"
 pg_never_used_indexes:
   query: |
     select pi.schemaname, pi.relname, pi.indexrelname, 
