@@ -1,2 +1,2 @@
 # serversage
-remiges-serversage-demo
+This repo is used for documentation !
