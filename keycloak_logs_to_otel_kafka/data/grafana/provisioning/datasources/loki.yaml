@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+- name: Loki
+  type: loki
+  uid: loki
+  access: proxy
+  orgId: 1
+  apiVersion: 1
+  url: http://loki:3100
+  basicAuth: false
+  isDefault: false
+  editable: true
+  jsonData:
+      timeout: 60        # Timeout for queries (in seconds)
+      maxLines: 1000     # Maximum number of log lines returned
