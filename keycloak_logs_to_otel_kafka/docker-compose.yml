@@ -70,10 +70,10 @@ services:
   tempo:
     image: grafana/tempo:latest
     user: "0"
-    command:
-      - "--config.file=/etc/tempo.yaml"
+    command: [ "--target=all", "-config.file=/etc/tempo.yaml", "--auth.enabled=false" ]
     ports:
-      - "4371:4371"
+      - "4317:4317"
+      - "3200:3200"
     volumes:
       - ./data/etc/tempo.yaml:/etc/tempo.yaml
       - ./data/tempo:/var/tempo/traces
@@ -86,13 +86,13 @@ services:
     volumes:
       - ./data/etc/loki-config.yaml:/etc/loki/local-config.yaml
 
-  elasticsearch:
-    image: docker.io/bitnami/elasticsearch:8
-    ports:
-      - '9200:9200'
-      - '9300:9300'
-    volumes:
-      - './data/elasticsearch/data:/bitnami/elasticsearch/data'
+  # elasticsearch:
+  #   image: docker.io/bitnami/elasticsearch:8
+  #   ports:
+  #     - '9200:9200'
+  #     - '9300:9300'
+  #   volumes:
+  #     - './data/elasticsearch/data:/bitnami/elasticsearch/data'
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -100,9 +100,9 @@ services:
       - "--config=/etc/otel-collector-config.yaml"
     volumes:
       - ./data/etc/otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    ports:
+    # ports:
       # - "4317:4317"
-      - "4318:4318"
+      # - "4318:4318"
 
 volumes:
   data:
