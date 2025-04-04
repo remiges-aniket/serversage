@@ -3,26 +3,19 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'otel'
+  # - job_name: 'otel'
+  #   scrape_interval: 5s
+  #   static_configs:
+  #     - targets: ['otel-collector:8889']
+
+  - job_name: 'kc'
     scrape_interval: 5s
+    metrics_path: '/metrics'
     static_configs:
-      - targets: ['otel-collector:8889']
+      - targets: ['keycloak:8080']
 
-  # - job_name: 'kc'
-  #   scrape_interval: 5s
-  #   metrics_path: '/metrics'
-  #   static_configs:
-  #     - targets: ['keycloak:8080']
-
-  # - job_name: 'kc.user'
-  #   scrape_interval: 5s
-  #   metrics_path: '/realms/master/metrics' # Correct metrics path
-  #   static_configs:
-  #     - targets: ['keycloak:8080']
-
-  # - job_name: 'keycloak_as'
-  #   metrics_path: '/auth/realms/master/metrics' # Correct metrics path
-  #   scrape_interval: 5s
-  #   static_configs:
-  #     - targets: ['keycloak:9000','keycloak:8443','keycloak:8080']
-
+  - job_name: 'kc.user'
+    scrape_interval: 5s
+    metrics_path: '/realms/master/metrics' # Correct metrics path
+    static_configs:
+      - targets: ['keycloak:8080']

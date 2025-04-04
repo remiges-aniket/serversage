@@ -7,20 +7,20 @@ receivers:
         endpoint: "0.0.0.0:4318"
 
 
-  prometheus/keycloak:
-    config:
-      scrape_configs:
+  # prometheus/keycloak:
+  #   config:
+  #     scrape_configs:
         # - job_name: 'kc'
         #   scrape_interval: 5s
         #   metrics_path: '/metrics'
         #   static_configs:
         #     - targets: ['keycloak:8080']
 
-        - job_name: 'kc.user'
-          scrape_interval: 5s
-          metrics_path: '/realms/master/metrics' # Correct metrics path
-          static_configs:
-            - targets: ['keycloak:8080']
+        # - job_name: 'kc.realm.master'
+        #   scrape_interval: 5s
+        #   metrics_path: '/realms/master/metrics' # Correct metrics path
+        #   static_configs:
+        #     - targets: ['keycloak:8080']
 
 processors:
   batch:
@@ -28,8 +28,8 @@ processors:
 exporters:
   debug:
     verbosity: detailed
-  prometheus:
-    endpoint: "0.0.0.0:8889"
+  # prometheus:
+  #   endpoint: "0.0.0.0:8889"
     # namespace: otel
   otlphttp/logs:
     endpoint: "http://loki:3100/otlp"
@@ -59,23 +59,23 @@ exporters:
   #   topic: "kc-uat" # Kafka topic for logs (e.g. "your-log-topic")
 
 
-connectors:
-  spanmetrics:
-    dimensions:
-      - name: http.method
-      - name: http.status_code
-      - name: http.route
+# connectors:
+#   spanmetrics:
+#     dimensions:
+#       - name: http.method
+#       - name: http.status_code
+#       - name: http.route
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp,spanmetrics]
-    metrics:
-      receivers: [otlp,spanmetrics]
-      processors: [batch]
-      exporters: [prometheus]
+      exporters: [otlp] # ,spanmetrics
+    # metrics:
+    #   receivers: [otlp]  # ,spanmetrics
+    #   processors: [batch]
+    #   exporters: [prometheus]
     logs:
       receivers: [otlp]
       processors: [batch]
