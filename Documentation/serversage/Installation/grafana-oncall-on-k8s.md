@@ -1,4 +1,4 @@
-Okay, let's translate the Grafana OnCall related parts of your Docker Compose setup into Kubernetes manifests.
+Okay, This file is converted from reference of Docker Compose setup into Kubernetes manifests. Please do the needful changes accordingly!
 
 You have three core OnCall components in your Docker Compose:
 1.  `oncall`: The main web application.
