@@ -338,7 +338,7 @@ You can use this variable whie deploying Grfana ( `GF_PLUGINS_PREINSTALL: grafan
     * Install the plugin by placing the downloaded files in the Grafana plugins directory.  The default plugin directory is usually `/var/lib/grafana/plugins`.
     * Restart Grafana.
     * Refer to the official Grafana OnCall documentation for detailed setup and configuration instructions: [https://grafana.com/docs/oncall/latest/](https://grafana.com/docs/oncall/latest/)
-    * To install it on kubernates look [here]().
+    * To install it on kubernates look [here](https://github.com/remiges-aniket/serversage/blob/main/Documentation/serversage/Installation/grafana-oncall-on-k8s.md).
 
 ###   5.2. Grafana LLM App
 
