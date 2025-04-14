@@ -332,3 +332,51 @@ grafana:
 1. [Official Jaeger with SPM docker compose example](https://github.com/jaegertracing/jaeger/tree/main/docker-compose/monitor)
 2. [Difference between OpenTelemetry Collector and OpenTelemetry Collector Contrib](https://uptrace.dev/opentelemetry/collector.html#otelcol-vs-otelcol-contrib)
 3. [The RED Method: key metrics for microservices architecture](https://www.weave.works/blog/the-red-method-key-metrics-for-microservices-architecture/)
+
+
+
+Changing the grafana to WL product with name Serversage:
+
+0. run ./deploy.sh
+
+1. Build the Docker image :
+docker build -t serversage .
+
+docker tag serversage:latest aniketxshinde/serversage:latest
+docker tag opentelemetry-apmcopy-spring-boot aniketxshinde/serversage:0.1.0
+
+docker tag opentelemetry-apm_backup-spring-boot-user aniketxshinde/serversage:0.1.1
+docker tag spring-boot-user-with-db-spring-boot:latest aniketxshinde/serversage:0.1.2
+
+docker login
+
+username: abc // your username of git
+pass: abc // your password of git
+
+docker push aniketxshinde/serversage:0.1.0
+docker push aniketxshinde/serversage:0.1.1
+docker push aniketxshinde/serversage:0.1.2
+
+2. Save the Docker image to a .tar archive:
+docker save -o serversage.tar serversage:latest
+
+3. (Optional) Compress the .tar archive You can further compress the .tar archive using gzip to reduce its size7:
+docker save serversage:latest | gzip > serversage.tar.gz
+
+4. Loading the image from the .tar archive To load the image from the .tar archive, use the docker load command58:
+docker load -i serversage.tar
+
+
+docker system prune -a
+
+docker builder prune
+docker container prune
+docker volume prune
+## stop & Remove All Containers
+docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)
+
+docker load -i java-apm-springboot-docker.tar
+
+scp otel-springboot.tar ubuntu@serversagedemo.remiges.tech:/serversage-demo/java-apm
+
+docker save -o java-apm-springboot-docker.tar ghcr.io/blueswen/opentelemetry-apm/springboot:latest

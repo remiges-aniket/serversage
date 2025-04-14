@@ -78,7 +78,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", exported_job=\"$app\", http_route=~\"$route\"}[$__range])*60)",
+          "expr": "sum(rate(traces_span_metrics_duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", exported_job=\"$app\", http_route=~\"$route\"}[$__range])*60)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -178,7 +178,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "topk(5, sort_desc(rate(duration_milliseconds_sum{http_status_code!=\"\", http_route=~\"$route\", exported_job=\"$app\"}[3m]))) / rate(duration_milliseconds_count{http_status_code!=\"\", http_route=~\"$route\", exported_job=\"$app\"}[3m])",
+          "expr": "topk(5, sort_desc(rate(traces_span_metrics_duration_milliseconds_sum{http_status_code!=\"\", http_route=~\"$route\", exported_job=\"$app\"}[3m]))) / rate(traces_span_metrics_duration_milliseconds_count{http_status_code!=\"\", http_route=~\"$route\", exported_job=\"$app\"}[3m])",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -242,7 +242,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(service_name)",
+          "expr": "sum(traces_span_metrics_duration_milliseconds_count{span_kind=\"SPAN_KIND_SERVER\", service_name=\"$app\", http_route=~\"$route\"}) by(service_name)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -344,7 +344,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by(http_route) (rate(duration_milliseconds_count{http_route=~\"$route\", exported_job=\"$app\"}[3m])) * 60",
+          "expr": "sum by(http_route) (rate(traces_span_metrics_duration_milliseconds_count{http_route=~\"$route\", exported_job=\"$app\"}[3m])) * 60",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -418,7 +418,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(duration_milliseconds_count{http_status_code=~\"4.*|5.*\", http_route=~\"$route\", exported_job=\"$app\"}[$__range])) / sum(rate(duration_milliseconds_count{http_route=~\"$route\", exported_job=\"$app\"}[$__range]))",
+          "expr": "sum(rate(traces_span_metrics_duration_milliseconds_count{http_status_code=~\"4.*|5.*\", http_route=~\"$route\", exported_job=\"$app\"}[$__range])) / sum(rate(traces_span_metrics_duration_milliseconds_count{http_route=~\"$route\", exported_job=\"$app\"}[$__range]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -518,9 +518,9 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum by(http_route) (rate(duration_milliseconds_count{http_route=~\"$route\", exported_job=\"$app\", http_status_code!=\"200\"}[3m])) * 60",
+          "expr": "sum by(http_status_code,http_route) (rate(http_server_response_size_bytes_count{http_route=~\"$route\", exported_job=\"$app\", http_status_code!=\"200\"}[3m])) * 60",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "",
           "range": true,
           "refId": "A"
         }
@@ -618,7 +618,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum by(le, http_route) (rate(duration_milliseconds_bucket{exported_job=\"$app\", http_route=~\"$route\", http_status_code=~\"^5.*|^4.*\"}[3m]))",
+          "expr": "sum by(le, http_route) (rate(http_server_response_size_bytes_bucket{exported_job=\"$app\", http_route=~\"$route\", http_status_code=~\"^5.*|^4.*\"}[3m]))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -718,7 +718,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "topk(5, histogram_quantile(0.95, sum by(le, http_route) (rate(duration_milliseconds_bucket{exported_job=\"$app\", http_route=~\"$route\"}[3m]))))",
+          "expr": "topk(5, histogram_quantile(0.95, sum by(le, http_route) (rate(http_server_response_size_bytes_bucket{exported_job=\"$app\", http_route=~\"$route\"}[3m]))))",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -786,7 +786,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},

@@ -43,18 +43,32 @@ public class AppApplication {
         return String.format("Hello %s!!", name);
     }
 
-    @GetMapping("/order")
+    @GetMapping("/order_list")
     public ResponseEntity<?> get_order(@RequestParam(value = "name", defaultValue = "World") String name)
             throws InterruptedException {
-        logger.info("GET -> /order, get_order reqst rceived");
+        logger.info("GET -> /order, get_order_list reqst rceived");
         Thread.sleep(1000);
         int rand = getRandomNumber(2, 100);
         if (rand < 50) {
             logger.info("get_order order not found");
-            return  ResponseEntity.status(HttpStatus.SC_SERVICE_UNAVAILABLE).body("get_order order not found");
+            return  ResponseEntity.status(HttpStatus.SC_SERVICE_UNAVAILABLE).body("get_order_list order not found");
         }
-        logger.info("get_order");
-        return ResponseEntity.ok("get_order") ;
+        logger.info("get_order_list");
+        return ResponseEntity.ok("get_order_list") ;
+    }
+
+    @GetMapping("/order/{id}")
+    public ResponseEntity<?> get_order_by_id(@RequestParam(value = "id", defaultValue = "1") String name)
+            throws InterruptedException {
+        logger.info("GET -> /order/{id}, get_order_by_id reqst rceived");
+        Thread.sleep(1000);
+        int rand = getRandomNumber(2, 100);
+        if (rand < 50) {
+            logger.info("get_order_by_id order not found");
+            return  ResponseEntity.status(HttpStatus.SC_SERVICE_UNAVAILABLE).body("get_order_by_id order not found");
+        }
+        logger.info("get_order_by_id");
+        return ResponseEntity.ok("get_order_by_id") ;
     }
 
     @PutMapping("/order")
@@ -129,15 +143,7 @@ public class AppApplication {
     @GetMapping("/chain")
     public String chain(@RequestParam(value = "name", defaultValue = "World") String name)
             throws InterruptedException, IOException {
-        String TARGET_ONE_SVC = System.getenv().getOrDefault("TARGET_ONE_SVC", "localhost:8080");
-        String TARGET_TWO_SVC = System.getenv().getOrDefault("TARGET_TWO_SVC", "localhost:8080");
         logger.debug("chain is starting");
-        Request.Get("http://localhost:8080/")
-                .execute().returnContent();
-        Request.Get(String.format("http://%s/io_task", TARGET_ONE_SVC))
-                .execute().returnContent();
-        Request.Get(String.format("http://%s/cpu_task", TARGET_TWO_SVC))
-                .execute().returnContent();
         logger.debug("chain is finished");
         return "chain";
     }
