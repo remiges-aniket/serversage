@@ -133,6 +133,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/3 \
 
 Enable log Format:
 
+```
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: admin123' -X PUT -d '
 {
   "log_format": {
@@ -150,7 +151,87 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger -H 'X-API-KE
         "upstream_response_time": "$upstream_response_time"
   }
 }'
+````
+# Elasticsearch logger format (working): 
 
+```
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
+  -H 'X-API-KEY: admin123' -X PUT -d '
+{
+  "log_format": {
+    "host": "$host",
+    "remote_addr": "$remote_addr",
+    "remote_user": "$remote_user",
+    "when": "$time_iso8601",
+    "request": "$request",
+    "response": "$resp_body",
+    "start_time": "$start_time",
+    "upstream": "$upstream_addr",
+    "apisix_latency": "$apisix_latency",
+    "status": "$status",
+    "body_bytes_sent": "$body_bytes_sent",
+    "http_referer": "$http_referer",
+    "http_user_agent": "$http_user_agent",
+    "request_time": "$request_time",
+    "server.version": "$server_version",
+    "server.hostname": "$hostname",
+    "upstream_connect_time": "$upstream_connect_time",
+    "upstream_header_time": "$upstream_header_time",
+    "upstream_response_time": "$upstream_response_time"
+  }
+}'
+
+
+```
+# Elasticsearch logger format version 2: 
+
+```
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
+  -H 'X-API-KEY: admin123' -X PUT -d '
+{
+  "log_format": {
+    "when": "$time_iso8601",
+    "request": "$request",
+    "response": "$response",
+    "start_time": "$start_time",
+    "route_id": "$route_id",
+    "client_ip": "$remote_addr",
+    "apisix_latency": "$apisix_latency",
+    "upstream": "$upstream_addr",
+    "server": {
+      "version": "$server_version",
+      "hostname": "$hostname"
+    },
+    "service_id": "$service_id",
+    "upstream_latency": "$upstream_latency",
+    "latency": "$latency",
+    "request_headers": {
+      "accept_encoding": "$http_accept_encoding",
+      "connection": "$http_connection",
+      "host": "$http_host",
+      "user_agent": "$http_user_agent"
+    },
+    "request_method": "$request_method",
+    "request_querystring": "$query_string",
+    "request_size": "$request_length",
+    "request_uri": "$request_uri",
+    "request_url": "$request_url",
+    "response_headers": {
+      "connection": "$upstream_http_connection",
+      "content_length": "$upstream_http_content_length",
+      "content_type": "$upstream_http_content_type",
+      "date": "$upstream_http_date",
+      "server": "$upstream_http_server"
+    },
+    "response_size": "$bytes_sent",
+    "response_status": "$status",
+    "server_hostname": "$hostname",
+    "server_version": "$server_version"
+  }
+}'
+
+
+```
 
 working 'fluet-bit.conf' on console:
 
