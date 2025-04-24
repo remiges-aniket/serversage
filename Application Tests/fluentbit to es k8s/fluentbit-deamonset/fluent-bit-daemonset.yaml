@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: default
+  labels:
+    k8s-app: fluent-bit
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit
+    spec:
+      serviceAccountName: fluent-bit
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: fluent-bit
+          image: fluent/fluent-bit:4.0
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - name: varlog
+              mountPath: /var/log
+            - name: config
+              mountPath: /fluent-bit/etc
+      volumes:
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: config
+          configMap:
+            name: fluent-bit-config
+
