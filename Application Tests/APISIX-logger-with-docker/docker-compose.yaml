@@ -18,6 +18,14 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    logging:
+      driver: fluentd 
+      options:
+        tag: etcd-logs
+        fluentd-address: localhost:24224 
+        fluentd-async-connect: "true"
+        fluentd-retry-wait: 1s
+        fluentd-max-retries: 30
 
   # web1:
   #   image: nginx:1.19.0-alpine
@@ -84,37 +92,37 @@ services:
       - apisix-net
 
   # # Fluent Bit for collecting and forwarding logs
-  fluent-bit:
-    image: fluent/fluent-bit:4.0
-    container_name: fluent-bit
-    # depends_on:
-      # - apisix
-      # - opensearch
-    volumes:
-      - ./fluentbit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-      - ./fluentbit/filter.lua:/fluent-bit/etc/filter.lua
-    ports:
-      - "24224:24224"
-    networks:
-      - apisix-net
+  # fluent-bit:
+  #   image: fluent/fluent-bit:4.0
+  #   container_name: fluent-bit
+  #   # depends_on:
+  #     # - apisix
+  #     # - opensearch
+  #   volumes:
+  #     - ./fluentbit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #     - ./fluentbit/filter.lua:/fluent-bit/etc/filter.lua
+  #   ports:
+  #     - "24224:24224"
+  #   networks:
+  #     - apisix-net
 
-  # Elasticsearch using Bitnami
-  elasticsearch:
-    image: bitnami/elasticsearch:8.18.0
-    container_name: elasticsearch
-    environment:
-     # - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=changeme
-     # - discovery.type=single-node
-    ports:
-      - "9200:9200"
-    networks:
-      - apisix-net
-    healthcheck:
-      test: ["CMD", "curl", "-u", "elastic:changeme", "-f", "http://localhost:9200"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+  # # Elasticsearch using Bitnami
+  # elasticsearch:
+  #   image: bitnami/elasticsearch:8.18.0
+  #   container_name: elasticsearch
+  #   environment:
+  #    # - ELASTICSEARCH_USERNAME=elastic
+  #     - ELASTICSEARCH_PASSWORD=changeme
+  #    # - discovery.type=single-node
+  #   ports:
+  #     - "9200:9200"
+  #   networks:
+  #     - apisix-net
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-u", "elastic:changeme", "-f", "http://localhost:9200"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
 
   # OpenSearch using Bitnami
   # opensearch:
