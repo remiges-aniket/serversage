@@ -187,6 +187,10 @@ nodeExporter:
       memory: 100Mi
 
 grafana:
+  image:
+    repository: aniketxshinde/serversage  # Replace with your custom image repository
+    tag: latest                                  # Replace with your custom image tag
+    pullPolicy: IfNotPresent
   enabled: true
   adminUser: admin
   adminPassword: prom-operator  # Change this password for production use!
@@ -202,7 +206,11 @@ grafana:
       cpu: 200m
       memory: 400Mi
   persistence:
-    enabled: false  # Enable if you want to persist dashboards/configs
+    enabled: true  # Enable or Disable if you want to persist dashboards/configs
+    storageClassName: ""           # Use your cluster's default StorageClass or specify one
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi                    # Adjust size as needed
 
 prometheus:
   prometheusSpec:
@@ -214,6 +222,7 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+          storageClassName: ""
     resources:
       requests:
         cpu: 200m
@@ -222,7 +231,7 @@ prometheus:
         cpu: 500m
         memory: 1Gi
     # Retention period for metrics data
-    retention: 15d
+    retention: 30d
     # Enable serviceMonitorSelectorNilUsesHelmValues to monitor all ServiceMonitors by default
     serviceMonitorSelectorNilUsesHelmValues: false
 
@@ -282,6 +291,22 @@ serviceAccounts:
 # Disable components you don't want by setting enabled: false above
 
 ```
+---
+## Additional Notes
+
+- **StorageClassName:** If you have a specific StorageClass in your cluster (e.g., `standard`, `fast`, `gp2`), specify it; otherwise, leave it blank to use the default.
+- **AccessModes:** `ReadWriteOnce` is typical for block storage.
+- **PVC Size:** Adjust `size` based on your expected data retention and cluster capacity.
+- After updating `values.yaml`, upgrade your Helm release:
+
+- This mounts a PVC at Grafana’s data directory (/var/lib/grafana), persisting dashboards, user data, and configuration.
+
+- Verify PVCs are created and bound:
+
+```bash
+kubectl get pvc -n kube-prometheus-stack
+```
+
 
 ---
 
@@ -315,7 +340,6 @@ kubectl get pods -n kube-prometheus-stack -l "release=kube-prom-stack"
 
 ---
 
-If you want me to help customize it further (e.g., enable ingress, add alert rules, configure persistence for Grafana), just ask!
 
 ---
 
