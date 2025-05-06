@@ -31,8 +31,15 @@ data:
     [OUTPUT]
         Name          stdout
         Match         kube.*
-    
-    
+    [OUTPUT]
+        Name             es
+        Match            kube.*
+        Host             elasticsearch.default.svc.cluster.local
+        Port             9200
+        Index            kubernetes-logs
+        Replace_Dots     On
+        Suppress_Type_Name On
+        Retry_Limit      False    
   parsers.conf: |  
     [PARSER]
         Name        docker
