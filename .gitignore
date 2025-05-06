@@ -727,3 +727,4 @@ keycloak_logs_to_otel_kafka/data/tempo/tempo_cluster_seed.json
 keycloak_logs_to_otel_kafka/data/tempo/tempo_cluster_seed.json
 keycloak_logs_to_otel_kafka/data/tempo/tempo_cluster_seed.json
 keycloak_logs_to_otel_kafka/data/tempo/tempo_cluster_seed.json
+Application Tests/fluentbit to es k8s/.vscode/settings.json

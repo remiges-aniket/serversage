@@ -42,19 +42,17 @@ grafana:
     storageClassName: ""           # Use your cluster's default StorageClass or specify one
     accessModes:
       - ReadWriteOnce
-    size: 10Gi                    # Adjust size as needed
+    size: 2Gi                    # Adjust size as needed
 
 prometheus:
   prometheusSpec:
+    replicas: 2
     # Storage settings - use persistent volume for production
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          accessModes: ["ReadWriteOnce"]
-          resources:
-            requests:
-              storage: 10Gi
-          storageClassName: ""
+    thanos:
+      objectStorageConfig:
+        name: thanos-objstore-config
+        key: objstore.yml
+      version: v0.35.1
     resources:
       requests:
         cpu: 200m
