@@ -1,0 +1,225 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: logging
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluent-bit-read
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - pods
+      - pods/logs
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluent-bit-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluent-bit-read
+subjects:
+  - kind: ServiceAccount
+    name: fluent-bit
+    namespace: logging
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Log_Level    info
+        Parsers_File parsers.conf
+    # Kubernetes Input
+    [INPUT]
+        Name              tail
+        Tag               redis*
+        Path              /var/log/containers/redis*.log
+        Parser            docker
+        DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+    # Extract pod name from filename and set it as a field
+    [FILTER]
+        Name    lua
+        Match   kube.*
+        Script  extract_prefix.lua
+        Call    extract_prefix
+    # Kubernetes Filter
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+        Annotations         Off
+        Labels              On
+    # Namespace Filter
+    # [FILTER]
+    #     Name                grep
+    #     Match               kube.*
+    #     Regex               $kubernetes['namespace_name'] ^(default|kube-system|logging|your-namespace)$    # Include logs from specific namespaces (add more as needed)
+    # Create a new record with nested structure for namespaces and pods
+    # [FILTER]
+    #     Name                nest
+    #     Match               kube.*
+    #     Operation           lift
+    #     Nested_under        kubernetes
+    #     Add_prefix          k8s_
+    # # OUTPUT to Elasticsearch for kube-proxy logs
+    # [OUTPUT]
+    #     Name                es
+    #     Match               kube.*
+    #     Match_Regex         ^filename=kube-proxy.*$
+    #     Host                elasticsearch.default.svc.cluster.local
+    #     Port                9200
+    #     Logstash_Format     On
+    #     Logstash_Prefix     kube-proxy-logs
+    #     Time_Key            @timestamp
+    #     Generate_ID         On
+    #     Suppress_Type_Name  On
+    #     Include_Tag_Key     On
+    #     Tag_Key             fluentbit_tag
+    # OUTPUT to Minio for minio logs
+    [OUTPUT]
+        Name                es
+        Match               kube.*
+        Match_Regex         ^filename=minio.*$
+        Host                elasticsearch.default.svc.cluster.local
+        Port                9200
+        Logstash_Format     On
+        Logstash_Prefix     minio-logs
+        Time_Key            @timestamp
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
+        Tag_Key             minio_tag
+    # OUTPUT to Redis for redis logs
+    [OUTPUT]
+        Name                es
+        Match               redis*
+        Match_Regex         ^filename=redis*$
+        Host                elasticsearch.default.svc.cluster.local
+        Port                9200
+        Index               redis-logs
+        Replace_Dots        On
+        Suppress_Type_Name  On
+        Generate_ID         On
+        Retry_Limit         False    
+        Include_Tag_Key     On
+        # Logstash_Format     On
+        # Logstash_Prefix     redis-logs
+        # Time_Key            @timestamp
+        # Match_Regex         ^filename=redis.*$
+        # Tag_Key             fluentbit_tag
+    # OUTPUT to Elasticsearch for fluent-bit logs
+    [OUTPUT]
+        Name                es
+        Match               kube.*
+        Match_Regex         ^filename=fluent-bit.*$
+        Host                elasticsearch.default.svc.cluster.local
+        Port                9200
+        Logstash_Format     On
+        Logstash_Prefix     fluent-bit-logs
+        Time_Key            @timestamp
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
+        Tag_Key             fluentbit_tag
+    # # Default OUTPUT for any other logs
+    # [OUTPUT]
+    #     Name                es
+    #     Match               kube.*
+    #     Host                elasticsearch.default.svc.cluster.local
+    #     Port                9200
+    #     Logstash_Format     On
+    #     Logstash_Prefix     kubernetes-logs
+    #     Time_Key            @timestamp
+    #     Generate_ID         On
+    #     Suppress_Type_Name  On
+    #     Include_Tag_Key     On
+    #     Tag_Key             fluentbit_tag
+  parsers.conf: |
+    [PARSER]
+        Name                docker
+        Format              json
+        Time_Key            time
+        Time_Format         %Y-%m-%dT%H:%M:%S %z
+        Time_Keep           On
+    [PARSER]
+        Name                syslog
+        Format              regex
+        Regex               ^\<(?<pri>[0-9]+)\>(?<time>[^ ]* {1,2}[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?(?:[^\:]*\:)? *(?<message>.*)$
+        Time_Key            time
+        Time_Format         %b %d %H:%M:%S
+  extract_prefix.lua: |
+    function extract_prefix(tag, timestamp, record)
+      local filename = record["filename"]
+      if filename ~= nil then
+          -- Extract prefix before first underscore
+          local prefix = string.match(filename, "^([^_]+)")
+          if prefix ~= nil then
+              record["filename_prefix"] = prefix
+          end
+      end
+      return 1, timestamp, record
+    end
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: logging
+  labels:
+    app: fluent-bit
+spec:
+  selector:
+    matchLabels:
+      app: fluent-bit
+  template:
+    metadata:
+      labels:
+        app: fluent-bit
+    spec:
+      serviceAccountName: fluent-bit
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:latest
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: fluent-bit-config
+          mountPath: /fluent-bit/etc/
+        env:
+        - name: FLUENT_ELASTICSEARCH_HOST
+          value: "elasticsearch-service"
+        - name: FLUENT_ELASTICSEARCH_PORT
+          value: "9200"
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluent-bit-config
+        configMap:
+          name: fluent-bit-config
