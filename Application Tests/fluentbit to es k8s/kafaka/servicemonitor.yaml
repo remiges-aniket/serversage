@@ -1,0 +1,22 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kafka-metrics
+  namespace: monitoring # namespace where prometheus operator is running
+  labels:
+    app: kafka
+    release: prometheus # This should match your Prometheus Operator release name
+spec:
+  selector:
+    matchLabels:
+      app: kafka # match with the kafka deployement
+      service: metrics
+  namespaceSelector:
+    matchNames:
+      - logharbour
+  endpoints:
+  - port: jmx-metrics
+    interval: 15s
+    path: /metrics
+  jobLabel: kafka-metrics
