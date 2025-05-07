@@ -49,6 +49,54 @@ data:
     log.segment.bytes=1073741824
     log.retention.check.interval.ms=300000
 ---
+# JMX Exporter ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-jmx-exporter-config
+  namespace: logharbour
+data:
+  kafka-jmx-config.yml: |
+    lowercaseOutputName: true
+    lowercaseOutputLabelNames: true
+    rules:
+    # Special cases and very specific rules
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+        clientId: "$3"
+        topic: "$4"
+        partition: "$5"
+    - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+        clientId: "$3"
+        broker: "$4:$5"
+    
+    # Generic per-topic metrics
+    - pattern: kafka.server<type=(.+), name=(.+), topic=(.+)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+      labels:
+        topic: "$3"
+    
+    # Generic broker metrics
+    - pattern: kafka.server<type=(.+), name=(.+)><>Value
+      name: kafka_server_$1_$2
+      type: GAUGE
+    
+    # Controller metrics
+    - pattern: kafka.controller<type=(.+), name=(.+)><>Value
+      name: kafka_controller_$1_$2
+      type: GAUGE
+    
+    # Kafka metrics
+    - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\w+)
+      name: kafka_$1_$2_$3_$4
+      type: GAUGE
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -71,14 +119,14 @@ spec:
         fsGroup: 1000
       initContainers:
       - name: volume-permission-fix
-        image: busybox:1.37.0 # Consider using a more recent patch, e.g., busybox:1.36.1 or later if 1.37.0 isn't available/intended
+        image: busybox:1.37.0
         command: ["sh", "-c", "chown -R 1000:1000 /var/lib/kafka/data"]
         volumeMounts:
           - name: data
             mountPath: /var/lib/kafka/data
       - name: wait-for-dns
-        image: busybox:1.37.0 # Consider using a more recent patch
-        imagePullPolicy: "IfNotPresent"
+        image: busybox:1.37.0
+        imagePullPolicy: "IfNotPresent" 
         command:
         - /bin/sh
         - -c
@@ -104,7 +152,6 @@ spec:
           name: plaintext
         - containerPort: 9093
           name: controller
-        # Port 5555 for JMX is still exposed by Kafka container, but not directly used by kafka-exporter
         - containerPort: 5555
           name: jmx
         env:
@@ -120,9 +167,9 @@ spec:
           value: "MkU3OEVBNTcwNTJENDM2Qg"
         - name: KAFKA_HEAP_OPTS
           value: "-Xmx1G -Xms1G"
-        - name: KAFKA_OPTS # JMX settings remain for Kafka itself, kafka-exporter uses client protocol
-          value: "-Dkraft.enabled=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=0.0.0.0 -Dcom.sun.management.jmxremote.host=0.0.0.0 -Dcom.sun.management.jmxremote.port=5555 -Dcom.sun.management.jmxremote.rmi.port=5555"
-        - name: JMX_PORT # This env var is for Kafka's JMX, not directly used by kafka-exporter
+        - name: KAFKA_OPTS
+          value: "-Dkraft.enabled=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dcom.sun.management.jmxremote.port=5555 -Dcom.sun.management.jmxremote.rmi.port=5555"
+        - name: JMX_PORT
           value: "5555"
         command:
         - /bin/bash
@@ -172,23 +219,28 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
-      # Kafka Exporter sidecar container
-      - name: kafka-exporter
-        image: bitnami/kafka-exporter:1.7.0
+      # JMX Exporter sidecar container
+      - name: jmx-exporter
+        image: bitnami/jmx-exporter:latest
         imagePullPolicy: "IfNotPresent"
         ports:
-        - containerPort: 9308 # Default port for bitnami/kafka-exporter
-          name: metrics
+        - containerPort: 9404
+          name: jmx-metrics
         env:
-        - name: KAFKA_EXPORTER_PORT # Port for the exporter to listen on
-          value: "9308"
-        - name: KAFKA_EXPORTER_KAFKA_BROKERS # Kafka broker(s) to connect to (localhost as it's a sidecar)
-          value: "localhost:9092"
-        # Add any other necessary KAFKA_EXPORTER_ environment variables here if needed
-        # e.g., KAFKA_EXPORTER_KAFKA_VERSION, KAFKA_EXPORTER_TLS_ENABLED, etc.
+        - name: CONFIG_YML
+          value: "/etc/jmx-exporter/kafka-jmx-config.yml"
+        - name: SERVICE_PORT
+          value: "9404"
+        - name: TARGET_HOST
+          value: "localhost"
+        - name: TARGET_PORT
+          value: "5555"
+        volumeMounts:
+        - name: jmx-config
+          mountPath: /etc/jmx-exporter
         resources:
           requests:
-            memory: "128Mi"
+            memory: "256Mi"
             cpu: "100m"
           limits:
             memory: "256Mi"
@@ -197,10 +249,9 @@ spec:
       - name: config
         configMap:
           name: kafka-kraft-config
-      # jmx-config volume is removed as it's not needed for kafka-exporter
-      # - name: jmx-config
-      #   configMap:
-      #     name: kafka-jmx-exporter-config
+      - name: jmx-config
+        configMap:
+          name: kafka-jmx-exporter-config
   volumeClaimTemplates:
   - metadata:
       name: data
@@ -225,8 +276,8 @@ spec:
     name: plaintext
   - port: 9093
     name: controller
-  - port: 9308 # Changed from 9404 (jmx-metrics) to 9308 for kafka-exporter
-    name: metrics
+  - port: 9404
+    name: jmx-metrics
 ---
 apiVersion: v1
 kind: Service
@@ -241,7 +292,7 @@ spec:
     targetPort: 9092
     name: plaintext
 ---
-# Service for Kafka exporter metrics
+# Service for JMX exporter metrics
 apiVersion: v1
 kind: Service
 metadata:
@@ -252,12 +303,12 @@ metadata:
     service: metrics
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: "9308" # Updated to kafka-exporter's port
+    prometheus.io/port: "9404"
 spec:
   selector:
     app: kafka
   ports:
-  - port: 9308 # Exposed service port
-    targetPort: 9308 # Target kafka-exporter's container port
-    name: metrics # Updated name
+  - port: 9404
+    targetPort: 9404
+    name: jmx-metrics
   type: ClusterIP
