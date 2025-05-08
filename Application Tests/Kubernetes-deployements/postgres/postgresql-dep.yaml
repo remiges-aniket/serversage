@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgresql-data
-  namespace: monitoring
+  namespace: postgres
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,7 +15,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgresql
-  namespace: monitoring
+  namespace: postgres
   labels:
     app: postgresql
 spec:
@@ -45,11 +45,11 @@ spec:
         - containerPort: 5432
         env:
         - name: POSTGRESQL_USERNAME
-          value: "admin"               # Change as needed
+          value: "postgres"               # Change as needed
         - name: POSTGRESQL_PASSWORD
-          value: "yourpassword"        # Use Secrets in production
+          value: "postgres"        # Use Secrets in production
         - name: POSTGRESQL_DATABASE
-          value: "mydatabase"          # Change as needed
+          value: "postgres"          # Change as needed
         volumeMounts:
         - name: postgredb
           mountPath: /bitnami/postgresql
@@ -69,7 +69,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgresql
-  namespace: monitoring
+  namespace: postgres
   labels:
     app: postgresql
 spec:
@@ -79,5 +79,6 @@ spec:
     targetPort: 5432
     protocol: TCP
     name: postgresql
+    nodePort: 30013
   selector:
     app: postgresql

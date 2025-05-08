@@ -67,17 +67,17 @@ services:
       - GF_AUTH_ADMIN_USER=admin
       - GF_AUTH_ADMIN_PASSWORD=admin
 
-# for tracing
-  tempo:
-    image: grafana/tempo:latest
-    user: "0"
-    command:
-      - "--config.file=/etc/tempo.yaml"
-    ports:
-      - "4371:4371"
-    volumes:
-      - ./data/etc/tempo.yaml:/etc/tempo.yaml
-      - ./data/tempo:/var/tempo/traces
+# # for tracing
+#   tempo:
+#     image: grafana/tempo:latest
+#     user: "0"
+#     command:
+#       - "--config.file=/etc/tempo.yaml"
+#     ports:
+#       - "4371:4371"
+#     volumes:
+#       - ./data/etc/tempo.yaml:/etc/tempo.yaml
+#       - ./data/tempo:/var/tempo/traces
 
 # for logs
   loki:
@@ -87,13 +87,13 @@ services:
     volumes:
       - ./data/etc/loki-config.yaml:/etc/loki/local-config.yaml
 
-  elasticsearch:
-    image: docker.io/bitnami/elasticsearch:8
-    ports:
-      - '9200:9200'
-      - '9300:9300'
-    volumes:
-      - './data/elasticsearch/data:/bitnami/elasticsearch/data'
+  # elasticsearch:
+  #   image: docker.io/bitnami/elasticsearch:8
+  #   ports:
+  #     - '9200:9200'
+  #     - '9300:9300'
+  #   volumes:
+  #     - './data/elasticsearch/data:/bitnami/elasticsearch/data'
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest

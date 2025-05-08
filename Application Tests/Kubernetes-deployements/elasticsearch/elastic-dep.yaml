@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: elastics-pod
- #namespace: elastic
+  #namespace: elastic
 spec:
   serviceName: elasticsearch
   replicas: 1
@@ -21,10 +21,10 @@ spec:
         #image: elasticsearch:8.11.1
         image: bitnami/elasticsearch:8.11.1
         #resources:
-         #   limits:
-          #    cpu: 1000m
-           # requests:
-            #  cpu: 100m
+        #   limits:
+        #    cpu: 1000m
+        # requests:
+        #  cpu: 100m
         ports:
         - containerPort: 9200
           name: rest
@@ -38,19 +38,19 @@ kind: Service
 apiVersion: v1
 metadata:
   name: elasticsearch
-    # namespace: e-search
+  # namespace: e-search
   labels:
     app: elasticsearch
 spec:
   selector:
     app: elasticsearch
-  #type: NodePort
+  type: NodePort
   ports:
     - port: 9200
       targetPort: 9200
       name: rest
-      #nodePort: 30016
+      nodePort: 30012 # You can specify a port in the 30000-32767 range
     - port: 9300
+      targetPort: 9300 # Added targetPort for the inter-node port
       name: inter-node
-
----
+      # nodePort: 30017 # You can specify a port in the 30000-32767 range

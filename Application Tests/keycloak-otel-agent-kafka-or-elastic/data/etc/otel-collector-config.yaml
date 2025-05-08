@@ -14,30 +14,32 @@ exporters:
     verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:8889"
-    # namespace: otel
+
   otlphttp/logs:
     endpoint: "http://loki:3100/otlp"
     tls:
       insecure: true
-    # batch:
-    #   send_batch_size: 1024
-    #   send_batch_max_size: 10MB
-    # label_map:
-    #   resource:
-    #     service.name: kc
+
   otlp:
     endpoint: tempo:4317
     tls:
       insecure: true
-# to opensearch
-  # opensearch:
+
+  elasticsearch:
+    endpoint: ["http://localhost:30012"]
+    logs_index: "kc-qa-logs"
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  # elasticsearch:
   #   logs_index: keycloak-uat
   #   http:
   #     endpoint: "http://elasticsearch:9200"
   #     tls:
   #       insecure: true
 
-# to kafka
   # kafka:
   #   brokers: ["kafka-host:9092"] # Kafka broker endpoint
   #   topic: "kc-uat" # Kafka topic for logs (e.g. "your-log-topic")
@@ -63,4 +65,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug,otlphttp/logs] # ,kafka
+      exporters: [debug, otlphttp/logs ,elasticsearch] # ,kafka
