@@ -2,20 +2,21 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgresql-data
-  namespace: postgres
+  namespace: database
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      # storage: 1Gi
+      storage: 512Mi
   storageClassName: standard   # Adjust to your cluster's StorageClass
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgresql
-  namespace: postgres
+  namespace: database
   labels:
     app: postgresql
 spec:
@@ -53,13 +54,13 @@ spec:
         volumeMounts:
         - name: postgredb
           mountPath: /bitnami/postgresql
-        resources:
-          limits:
-            memory: 512Mi
-            cpu: "0.5"
-          requests:
-            memory: 256Mi
-            cpu: "0.25"
+        # resources:
+        #   limits:
+        #     memory: 512Mi
+        #     cpu: "0.5"
+        #   requests:
+        #     memory: 256Mi
+        #     cpu: "0.25"
       volumes:
       - name: postgredb
         persistentVolumeClaim:
@@ -69,16 +70,16 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgresql
-  namespace: postgres
+  namespace: database
   labels:
     app: postgresql
 spec:
-  type: ClusterIP
+  selector:
+    app: postgresql
+  type: NodePort
   ports:
   - port: 5432
     targetPort: 5432
-    protocol: TCP
     name: postgresql
-    nodePort: 30013
-  selector:
-    app: postgresql
+    protocol: TCP
+    nodePort: 30014

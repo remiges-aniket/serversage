@@ -1,0 +1,23 @@
+---
+# ConfigMap for init script
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-init-script
+  namespace: monitoring
+data:
+  init.sh: |
+    #!/bin/sh
+    set -e
+    
+    # Create directories with proper permissions
+    mkdir -p /var/lib/grafana/plugins
+    mkdir -p /var/lib/grafana/dashboards
+    mkdir -p /var/lib/grafana/alerting
+    mkdir -p /var/lib/grafana/csv
+    
+    # Set permissions
+    chown -R 472:472 /var/lib/grafana
+    chmod -R 775 /var/lib/grafana
+    
+    echo "Initialized Grafana directories with proper permissions"
