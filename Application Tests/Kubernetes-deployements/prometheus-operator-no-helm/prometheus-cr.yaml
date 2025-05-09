@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  replicas: 2  # HA setup with 2 replicas
+  serviceAccountName: prometheus
+  serviceMonitorSelector: {}
+  podMonitorSelector: {}
+  probeSelector: {}
+  scrapeInterval: "15s"
+  evaluationInterval: "15s"
+  retention: "365d"
+  externalLabels:
+    cluster: ha-cluster
+  thanos:
+    baseImage: quay.io/thanos/thanos
+    version: v0.32.0
+    objectStorageConfig:
+      key: objstore.yaml
+      name: thanos-objstore-config
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 10Gi
