@@ -18,42 +18,43 @@ kubectl create -f https://raw.githubusercontent.com/prometheus-operator/promethe
 
 
 echo "Step 2: Deleting existing prometheus-operator deployment..."
-kubectl delete deployment prometheus-operator -n monitoring
+kubectl delete deployment prometheus-operator -n serversage
 
-echo "Step 3: Extracting just the Prometheus CR from the config file..."
-cat > prometheus-cr.yaml << 'EOF'
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  name: prometheus
-  namespace: monitoring
-spec:
-  replicas: 2  # HA setup with 2 replicas
-  serviceAccountName: prometheus
-  serviceMonitorSelector: {}
-  podMonitorSelector: {}
-  probeSelector: {}
-  scrapeInterval: "15s"
-  evaluationInterval: "15s"
-  retention: "24h"
-  externalLabels:
-    cluster: ha-cluster
-  thanos:
-    baseImage: quay.io/thanos/thanos
-    version: v0.32.0
-    objectStorageConfig:
-      key: objstore.yaml
-      name: thanos-objstore-config
-  storage:
-    volumeClaimTemplate:
-      spec:
-        storageClassName: standard
-        resources:
-          requests:
-            storage: 4Gi
-EOF
+# echo "Step 3: Extracting just the Prometheus CR from the config file..."
+# cat > prometheus-cr.yaml << 'EOF'
+# apiVersion: monitoring.coreos.com/v1
+# kind: Prometheus
+# metadata:
+#   name: prometheus
+#   namespace: serversage
+# spec:
+#   replicas: 2  # HA setup with 2 replicas
+#   serviceAccountName: prometheus
+#   serviceMonitorSelector: {}
+#   podMonitorSelector: {}
+#   probeSelector: {}
+#   scrapeInterval: "15s"
+#   evaluationInterval: "15s"
+#   retention: "30d"
+#   externalLabels:
+#     cluster: ha-cluster
+#   thanos:
+#     baseImage: quay.io/thanos/thanos
+#     version: v0.32.0
+#     objectStorageConfig:
+#       key: objstore.yaml
+#       name: thanos-objstore-config
+#   storage:
+#     volumeClaimTemplate:
+#       spec:
+#         storageClassName: standard
+#         resources:
+#           requests:
+#             storage: 4Gi
+# EOF
 
-echo "Step 4: Apply the Prometheus CR separately..."
-kubectl apply -f prometheus-cr.yaml
+# echo "Step 4: Apply the Prometheus CR separately..."
+# kubectl apply -f prometheus-cr.yaml
+# kubectl delete -f prometheus-cr.yaml
 
 echo "Done! Check the status with: kubectl get prometheuses -n monitoring"

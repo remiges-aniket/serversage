@@ -48,3 +48,18 @@ kubectl exec -n monitoring minio-0 -- ls -l /data/thanos/
                                                      +----------------------+
 
 ```
+
+## Permission issue in Thanos-storage:
+
+go to that worker using docker exec and give dir right to nobody user : (65534 : nobody)
+
+```sh
+sudo chown -R 65534:65534 /bse-data/thanos-store/thanos-store-gateway-0
+
+```
+
+## Running approach:
+1. run 1.namespace : keep "monitoring:proemetheus" as it is
+2. run 2.init
+3. run 3.prometheus-op.yaml
+4. done..

@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   name: prometheus
-  namespace: monitoring
+  namespace: serversage
 spec:
   replicas: 2  # HA setup with 2 replicas
   serviceAccountName: prometheus
@@ -11,7 +11,7 @@ spec:
   probeSelector: {}
   scrapeInterval: "15s"
   evaluationInterval: "15s"
-  retention: "24h"
+  retention: "30d"
   externalLabels:
     cluster: ha-cluster
   thanos:

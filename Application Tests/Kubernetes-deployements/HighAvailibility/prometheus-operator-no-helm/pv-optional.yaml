@@ -1,0 +1,52 @@
+# PersistentVolumes for Prometheus
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-db-prometheus-0
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: prometheus-storage
+  hostPath:
+    # path: /data/prometheus-0
+    path: /bse-data/prometheus/prometheus-0
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-db-prometheus-1
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: prometheus-storage
+  hostPath:
+    # path: /data/prometheus-1
+    path: /bse-data/prometheus/prometheus-1
+    type: DirectoryOrCreate
+
+---
+
+# PersistentVolume for Thanos Store Gateway
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: thanos-store-gateway-pv-0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: thanos-store-gateway-storage
+  hostPath:
+    # path: /data/thanos-store-gateway
+    path: /bse-data/thanos-store/thanos-store-gateway-0
+    type: DirectoryOrCreate
