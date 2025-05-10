@@ -10,7 +10,7 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: grafana-pv
-  namespace: monitoring
+  namespace: grafana
   labels:
     app: grafana
 spec:
@@ -29,7 +29,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: grafana-pvc
-  namespace: monitoring
+  namespace: grafana
   labels:
     app: grafana
 spec:
@@ -45,7 +45,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-config
-  namespace: monitoring
+  namespace: grafana
 data:
   grafana.ini: |
     [server]
@@ -65,7 +65,7 @@ data:
     
     [security]
     admin_user = admin
-    admin_password = admin
+    admin_password = serversage
 
     [dashboards]
     default_home_dashboard_path = /etc/grafana/provisioning/dashboards/default.json
@@ -81,13 +81,19 @@ data:
     
     [unified_alerting]
     enabled = true
+
+    [feature_toggles]
+    enable = dashgpt
+    dashgpt = true
+    accessControlOnCall = true # required for oncall plugin to work
+
 ---
 # ConfigMap for Grafana dashboards provisioning
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-provisioning
-  namespace: monitoring
+  namespace: grafana
 data:
   dashboards.yaml: |
     apiVersion: 1
@@ -107,7 +113,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources-provisioning
-  namespace: monitoring
+  namespace: grafana
 data:
   datasources.yaml: |
     apiVersion: 1
@@ -115,7 +121,7 @@ data:
     - name: Prometheus
       type: prometheus
       access: proxy
-      url: http://thanos-query.monitoring.svc.cluster.local:9090
+      url: http://thanos-querier.monitoring.svc.cluster.local:9090
       isDefault: true
       editable: true
     - name: Loki
@@ -134,7 +140,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-default-dashboard
-  namespace: monitoring
+  namespace: grafana
 data:
   default.json: |
     {
@@ -261,7 +267,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
-  namespace: monitoring
+  namespace: grafana
   labels:
     app: grafana
 spec:
@@ -291,7 +297,8 @@ spec:
             runAsUser: 0  # Run as root for init container only
       containers:
         - name: grafana
-          image: aniketxshinde/serversage:latest
+          # image: aniketxshinde/serversage:latest
+          image: grafana/grafana:12.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 472
@@ -339,12 +346,14 @@ spec:
               value: /var/log/grafana
             - name: GF_INSTALL_PLUGINS
               value: "grafana-llm-app,grafana-oncall-app"
-            - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
-              value: "grafana-llm-app,grafana-oncall-app"
+            # - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
+            #   value: "grafana-llm-app,grafana-oncall-app"
             - name: GF_SERVER_ENABLE_GZIP
               value: "true"
             - name: GF_FEATURE_TOGGLES_ENABLE
               value: "publicDashboards,nestedFolders,correlations,publicDashboardsEmailSharing,mlExpressions"
+            - name: GF_PLUGINS_PREINSTALL
+              value: "grafana-llm-app,grafana-oncall-app"
           volumeMounts:
             - name: grafana-storage
               mountPath: /var/lib/grafana
@@ -385,18 +394,18 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: grafana-secret
-  namespace: monitoring
+  namespace: grafana
 type: Opaque
 data:
   admin-user: YWRtaW4=     # admin
-  admin-password: YWRtaW4=  # admin
+  admin-password: c2VydmVyc2FnZQ==  # serversage
 ---
 # Service for Grafana
 apiVersion: v1
 kind: Service
 metadata:
   name: grafana
-  namespace: monitoring
+  namespace: grafana
   labels:
     app: grafana
   annotations:
@@ -411,14 +420,14 @@ spec:
       targetPort: 3000
       protocol: TCP
       name: http
-      nodePort: 30012
+      nodePort: 30016
 ---
 # Ingress for Grafana (if needed)
 # apiVersion: networking.k8s.io/v1
 # kind: Ingress
 # metadata:
 #   name: grafana-ingress
-#   namespace: monitoring
+#   namespace: grafana
 #   annotations:
 #     kubernetes.io/ingress.class: nginx
 #     nginx.ingress.kubernetes.io/ssl-redirect: "false"

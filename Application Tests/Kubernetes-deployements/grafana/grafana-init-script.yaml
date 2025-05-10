@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-init-script
-  namespace: monitoring
+  namespace: grafana
 data:
   init.sh: |
     #!/bin/sh

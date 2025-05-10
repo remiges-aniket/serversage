@@ -14,6 +14,8 @@ kubectl create namespace logging
 kubectl create namespace monitoring
 kubectl create namespace logharbour
 kubectl create namespace elastic
+kubectl create namespace grafana
+
 ```
 ## Open ports list for cluster `first-cluster`:
 

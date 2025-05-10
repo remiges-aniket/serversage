@@ -657,85 +657,85 @@ spec:
 #               number: 9090
 
 ---
-# Grafana Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: serversage
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-    spec:
-      securityContext:
-        fsGroup: 472
-        supplementalGroups:
-          - 0
-      containers:
-      - name: grafana
-        image: aniketxshinde/serversage:latest
-        ports:
-        - containerPort: 3000
-          name: http
-        volumeMounts:
-        - name: grafana-storage
-          mountPath: /var/lib/grafana
-        - name: grafana-datasources
-          mountPath: /etc/grafana/provisioning/datasources
-        env:
-        - name: GF_SECURITY_ADMIN_USER
-          value: admin
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: admin
-        - name: GF_USERS_ALLOW_SIGN_UP
-          value: "false"
-      volumes:
-      - name: grafana-storage
-        emptyDir: {}
-      - name: grafana-datasources
-        configMap:
-          name: grafana-datasources
+# # Grafana Deployment
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: grafana
+#   namespace: serversage
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: grafana
+#   template:
+#     metadata:
+#       labels:
+#         app: grafana
+#     spec:
+#       securityContext:
+#         fsGroup: 472
+#         supplementalGroups:
+#           - 0
+#       containers:
+#       - name: grafana
+#         image: aniketxshinde/serversage:latest
+#         ports:
+#         - containerPort: 3000
+#           name: http
+#         volumeMounts:
+#         - name: grafana-storage
+#           mountPath: /var/lib/grafana
+#         - name: grafana-datasources
+#           mountPath: /etc/grafana/provisioning/datasources
+#         env:
+#         - name: GF_SECURITY_ADMIN_USER
+#           value: admin
+#         - name: GF_SECURITY_ADMIN_PASSWORD
+#           value: admin
+#         - name: GF_USERS_ALLOW_SIGN_UP
+#           value: "false"
+#       volumes:
+#       - name: grafana-storage
+#         emptyDir: {}
+#       - name: grafana-datasources
+#         configMap:
+#           name: grafana-datasources
 
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-datasources
-  namespace: serversage
-data:
-  datasources.yaml: |
-    apiVersion: 1
-    datasources:
-    - name: Thanos
-      type: prometheus
-      url: http://thanos-querier.serversage.svc.cluster.local:9090
-      access: proxy
-      isDefault: true
-      editable: true
-    - name: prometheus
-      type: prometheus
-      url: http://prometheus-operated.serversage.svc.cluster.local:9090
-      access: proxy
-      editable: true
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: grafana
-  namespace: serversage
-spec:
-  ports:
-  - name: http
-    port: 3000
-    targetPort: 3000
-  selector:
-    app: grafana
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: grafana-datasources
+#   namespace: serversage
+# data:
+#   datasources.yaml: |
+#     apiVersion: 1
+#     datasources:
+#     - name: Thanos
+#       type: prometheus
+#       url: http://thanos-querier.serversage.svc.cluster.local:9090
+#       access: proxy
+#       isDefault: true
+#       editable: true
+#     - name: prometheus
+#       type: prometheus
+#       url: http://prometheus-operated.serversage.svc.cluster.local:9090
+#       access: proxy
+#       editable: true
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: grafana
+#   namespace: serversage
+# spec:
+#   ports:
+#   - name: http
+#     port: 3000
+#     targetPort: 3000
+#   selector:
+#     app: grafana
 
 ---
 # ServiceMonitor for Kube State Metrics
