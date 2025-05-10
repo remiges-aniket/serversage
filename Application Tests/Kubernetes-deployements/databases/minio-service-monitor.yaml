@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: minio-metrics
+  namespace: serversage  # VIP: Same namespace as where Prometheus operator is in (servicemonitor will create here), this is must step
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: minio  # VIP: this must match from minio -> service -> metadata -> labels
+  namespaceSelector:
+    matchNames:
+      - database  # This tells Prometheus to scrape from the "database" namespace (namespace where minio is in)
+  endpoints:
+    - port: http
+      path: /minio/v2/metrics/cluster # path where metrics will expose to
+      interval: 30s
+      scheme: http

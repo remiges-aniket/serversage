@@ -1,6 +1,6 @@
 # minio-deployment.yaml
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: minio
   namespace: database
@@ -8,19 +8,16 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio
+      app.kubernetes.io/name: minio
   template:
     metadata:
       labels:
-        app: minio
+        app.kubernetes.io/name: minio
     spec:
       containers:
       - name: minio
         image: minio/minio:latest
-        args:
-        - server
-        - /data
-        - --console-address=:9001
+        args: ["server", "/data", "--console-address", ":9001"]
         env:
         - name: MINIO_ROOT_USER
           value: "minio"
@@ -46,9 +43,11 @@ kind: Service
 metadata:
   name: minio
   namespace: database
+  labels:
+    app.kubernetes.io/name: minio
 spec:
   selector:
-    app: minio
+    app.kubernetes.io/name: minio
   # type: LoadBalancer   # comment nodePort when enabled this
   type: NodePort
   ports:
