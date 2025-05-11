@@ -1,4 +1,4 @@
-# Below cluster is configure for : master node= 3, client node= 2, data node= 3
+# Below cluster is configure for : master node= 1, client node= 1, data node= 1
 ---
 # ConfigMap for Elasticsearch configuration
 apiVersion: v1
@@ -54,14 +54,18 @@ metadata:
   labels:
     app: elasticsearch
 spec:
-  clusterIP: None
+  # clusterIP: None
+  type: NodePort
   selector:
     app: elasticsearch
   ports:
   - port: 9200
     name: http
+    nodePort: 30012
+    protocol: TCP
   - port: 9300
     name: transport
+    protocol: TCP
 
 ---
 # Service for client nodes
@@ -157,44 +161,44 @@ spec:
     type: DirectoryOrCreate
 
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: elasticsearch-master-pv-1
-  namespace: database
-  labels:
-    app: elasticsearch
-    role: master
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: elasticsearch-storage
-  hostPath:
-    path: /data/elasticsearch/master-1
-    type: DirectoryOrCreate
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: elasticsearch-master-pv-1
+#   namespace: database
+#   labels:
+#     app: elasticsearch
+#     role: master
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Retain
+#   storageClassName: elasticsearch-storage
+#   hostPath:
+#     path: /data/elasticsearch/master-1
+#     type: DirectoryOrCreate
 
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: elasticsearch-master-pv-2
-  namespace: database
-  labels:
-    app: elasticsearch
-    role: master
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: elasticsearch-storage
-  hostPath:
-    path: /data/elasticsearch/master-2
-    type: DirectoryOrCreate
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: elasticsearch-master-pv-2
+#   namespace: database
+#   labels:
+#     app: elasticsearch
+#     role: master
+# spec:
+#   capacity:
+#     storage: 5Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Retain
+#   storageClassName: elasticsearch-storage
+#   hostPath:
+#     path: /data/elasticsearch/master-2
+#     type: DirectoryOrCreate
 
 ---
 # PersistentVolumes for Data Nodes
@@ -218,44 +222,44 @@ spec:
     type: DirectoryOrCreate
 
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: elasticsearch-data-pv-1
-  namespace: database
-  labels:
-    app: elasticsearch
-    role: data
-spec:
-  capacity:
-    storage: 6Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: elasticsearch-storage
-  hostPath:
-    path: /data/elasticsearch/data-1
-    type: DirectoryOrCreate
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: elasticsearch-data-pv-1
+#   namespace: database
+#   labels:
+#     app: elasticsearch
+#     role: data
+# spec:
+#   capacity:
+#     storage: 6Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Retain
+#   storageClassName: elasticsearch-storage
+#   hostPath:
+#     path: /data/elasticsearch/data-1
+#     type: DirectoryOrCreate
 
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: elasticsearch-data-pv-2
-  namespace: database
-  labels:
-    app: elasticsearch
-    role: data
-spec:
-  capacity:
-    storage: 6Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: elasticsearch-storage
-  hostPath:
-    path: /data/elasticsearch/data-2
-    type: DirectoryOrCreate
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: elasticsearch-data-pv-2
+#   namespace: database
+#   labels:
+#     app: elasticsearch
+#     role: data
+# spec:
+#   capacity:
+#     storage: 6Gi
+#   accessModes:
+#     - ReadWriteOnce
+#   persistentVolumeReclaimPolicy: Retain
+#   storageClassName: elasticsearch-storage
+#   hostPath:
+#     path: /data/elasticsearch/data-2
+#     type: DirectoryOrCreate
 
 ---
 # StatefulSet for Master Nodes
@@ -269,7 +273,7 @@ metadata:
     role: master
 spec:
   serviceName: elasticsearch-master
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: elasticsearch
@@ -378,7 +382,7 @@ metadata:
     role: data
 spec:
   serviceName: elasticsearch-data
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: elasticsearch
@@ -486,7 +490,7 @@ metadata:
     app: elasticsearch
     role: client
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: elasticsearch

@@ -169,3 +169,16 @@ curl -XPUT 'localhost:9200/my_data' -H 'Content-Type: application/json' -d'
 * **Shard Allocation Awareness:** Kubernetes, along with Elasticsearch's awareness of node roles, helps ensure that primary and replica shards are ideally placed on different nodes. The `podAntiAffinity` rule for master nodes in your manifest contributes to the overall resilience of the cluster.
 
 By configuring the `number_of_shards` and `number_of_replicas` when creating your indices, you will fully leverage the distributed architecture of your Elasticsearch cluster deployed on Kubernetes, gaining benefits in terms of data distribution, query performance, and high availability. Remember to tailor these settings to your specific `data volume`, `query patterns`, and the `size` of your Elasticsearch cluster.
+
+
+
+kubectl apply -f namespace.yaml
+kubectl apply -f elasticsearch-ha-cluster.yaml
+
+kubectl delete -f elasticsearch-ha-cluster.yaml
+
+or
+
+kubectl apply -f elasticsearch-1-node-ha-cluster.yaml 
+
+kubectl delete -f elasticsearch-1-node-ha-cluster.yaml 
