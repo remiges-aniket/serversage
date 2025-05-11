@@ -2,6 +2,11 @@
 - Explain the requirements for the mentioned manifest file to run. Also, explain what the difference is between the master node, data node, and client node given in the shared YAML file, and also why it is needed. Are there any replications also? And tell me your view on that ! 
 
 ## Point 1: Setup & Explanation
+
+Basic Flow:
+
+![alt text](elastic-cluster-flow.jpg)
+
 Okay, let's break down that Elasticsearch High Availability (HA) cluster manifest file.
 
 Based on the YAML i've shared, here's an explanation of the requirements to run it, the differences between the node types, why they're needed, and my thoughts on replication:
