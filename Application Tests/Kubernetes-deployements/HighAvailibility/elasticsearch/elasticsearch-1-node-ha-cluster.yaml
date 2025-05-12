@@ -61,14 +61,12 @@ metadata:
   labels:
     app: elasticsearch
 spec:
-  # clusterIP: None
-  type: NodePort
+  clusterIP: None
   selector:
     app: elasticsearch
   ports:
   - port: 9200
     name: http
-    nodePort: 30012
     protocol: TCP
   - port: 9300
     name: transport
