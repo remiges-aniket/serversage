@@ -175,7 +175,23 @@ curl -XPUT 'localhost:9200/my_data' -H 'Content-Type: application/json' -d'
 
 By configuring the `number_of_shards` and `number_of_replicas` when creating your indices, you will fully leverage the distributed architecture of your Elasticsearch cluster deployed on Kubernetes, gaining benefits in terms of data distribution, query performance, and high availability. Remember to tailor these settings to your specific `data volume`, `query patterns`, and the `size` of your Elasticsearch cluster.
 
+✅ **Elasticsearch should connect to the `client`.**
 
+Specifically:
+
+* Use the **`elasticsearch-client`** service to connect from:
+
+  * **Kibana**
+  * **Kafka Connect**
+  * **Any external tool**
+
+---
+
+**Do NOT connect to `data` or `master` nodes directly.**
+
+Those are internal roles for the cluster and not meant for external access or ingestion and `service/elasticsearch` is for devOps & debbuging only.
+
+---
 
 kubectl apply -f namespace.yaml
 kubectl apply -f elasticsearch-ha-cluster.yaml

@@ -1,5 +1,12 @@
 # Below cluster is configure for : master node= 1, client node= 1, data node= 1
 ---
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: database
+#   labels:
+#     monitoring: prometheus
+---
 # ConfigMap for Elasticsearch configuration
 apiVersion: v1
 kind: ConfigMap
