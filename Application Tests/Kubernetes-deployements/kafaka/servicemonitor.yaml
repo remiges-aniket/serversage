@@ -15,7 +15,7 @@ spec:
     matchNames:
       - logharbour
   endpoints:
-  - port: metrics
+  - port: jmx-metrics
     interval: 15s
     path: /metrics
   jobLabel: kafka-exporter

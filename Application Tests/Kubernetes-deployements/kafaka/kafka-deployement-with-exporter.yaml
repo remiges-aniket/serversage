@@ -1,4 +1,11 @@
----
+# ---
+# apiVersion: v1
+# kind: Namespace
+# metadata:
+#   name: logharbour
+#   labels:
+#     monitoring: prometheus
+# ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -19,6 +26,7 @@ data:
     # Listeners
     listeners=PLAINTEXT://:9092,CONTROLLER://:9093
     advertised.listeners=PLAINTEXT://POD_NAME_PLACEHOLDER.kafka-headless.NAMESPACE_PLACEHOLDER.svc.cluster.local:9092
+    # advertised.listeners=PLAINTEXT://kafka-headless.NAMESPACE_PLACEHOLDER.svc.cluster.local:9092
     
     # Controller configuration
     controller.quorum.voters=CONTROLLER_QUORUM_VOTERS_PLACEHOLDER
@@ -105,7 +113,7 @@ metadata:
 spec:
   serviceName: kafka-headless
   podManagementPolicy: Parallel
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: kafka
@@ -135,6 +143,7 @@ spec:
           echo "Checking DNS resolution..."
           # Try to resolve our own hostname first
           getent hosts $HOSTNAME.kafka-headless.$NAMESPACE.svc.cluster.local || echo "Warning: Can't resolve own hostname yet"
+          # getent hosts kafka-headless.$NAMESPACE.svc.cluster.local || echo "Warning: Can't resolve own hostname yet"
           echo "DNS check completed"
         env:
         - name: NAMESPACE
@@ -182,7 +191,8 @@ spec:
           ORDINAL=$(echo $KAFKA_POD_NAME | rev | cut -d'-' -f1 | rev)
           
           # Construct the controller quorum voters
-          CONTROLLER_QUORUM_VOTERS="0@kafka-0.kafka-headless.${KAFKA_NAMESPACE}.svc.cluster.local:9093,1@kafka-1.kafka-headless.${KAFKA_NAMESPACE}.svc.cluster.local:9093"
+          # CONTROLLER_QUORUM_VOTERS="0@kafka-0.kafka-headless.${KAFKA_NAMESPACE}.svc.cluster.local:9093,1@kafka-1.kafka-headless.${KAFKA_NAMESPACE}.svc.cluster.local:9093"
+          CONTROLLER_QUORUM_VOTERS="0@kafka-0.kafka-headless.${KAFKA_NAMESPACE}.svc.cluster.local:9093"
           
           echo "Starting Kafka with broker.id=$ORDINAL"
           echo "Controller quorum voters: $CONTROLLER_QUORUM_VOTERS"
