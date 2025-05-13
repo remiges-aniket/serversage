@@ -22,6 +22,39 @@ data:
         Mem_Buf_Limit     5MB
         Skip_Long_Lines   On
         Refresh_Interval  10
+    # Kafka Input
+    [INPUT]
+        Name              tail
+        Tag               kafka*
+        Path              /var/log/containers/kafka*.log
+        Parser            docker
+        Path_Key          filename
+        DB                /var/log/flb_kafka.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+    # Otel Input
+    [INPUT]
+        Name              tail
+        Tag               otel*
+        Path              /var/log/containers/otel*.log
+        Parser            docker
+        Path_Key          filename
+        DB                /var/log/flb_otel.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+    # Etcd Input
+    [INPUT]
+        Name              tail
+        Tag               etcd*
+        Path              /var/log/containers/etcd*.log
+        Parser            docker
+        Path_Key          filename
+        DB                /var/log/flb_etcd.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
     # Minio Input
     [INPUT]
         Name              tail
@@ -30,6 +63,17 @@ data:
         Parser            docker
         Path_Key          filename
         DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+    # Postgres Input
+    [INPUT]
+        Name              tail
+        Tag               postgres*
+        Path              /var/log/containers/postgres*.log
+        Parser            docker
+        Path_Key          filename
+        DB                /var/log/flb_postgres.db
         Mem_Buf_Limit     5MB
         Skip_Long_Lines   On
         Refresh_Interval  10
@@ -63,6 +107,43 @@ data:
         K8S-Logging.Exclude Off
         Annotations         Off
         Labels              On
+    #------------------------------  OUTPUT  --------------------------------------------
+    # OUTPUT for etcd logs
+    [OUTPUT]
+        Name                es
+        Match               etcd*
+        Match_Regex         ^filename=etcd.*$
+        Host                ${elasticsearch_host}
+        Port                ${elasticsearch_port}
+        Index               etcd-logs
+        Replace_Dots        On
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
+    # OUTPUT for kafka logs
+    [OUTPUT]
+        Name                es
+        Match               kafka*
+        Match_Regex         ^filename=kafka.*$
+        Host                ${elasticsearch_host}
+        Port                ${elasticsearch_port}
+        Index               kafka-logs
+        Replace_Dots        On
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
+    # OUTPUT for otel logs
+    [OUTPUT]
+        Name                es
+        Match               otel*
+        Match_Regex         ^filename=otel.*$
+        Host                ${elasticsearch_host}
+        Port                ${elasticsearch_port}
+        Index               otel-logs
+        Replace_Dots        On
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
     # OUTPUT to Minio for minio logs
     [OUTPUT]
         Name                es
@@ -71,6 +152,18 @@ data:
         Host                ${elasticsearch_host}
         Port                ${elasticsearch_port}
         Index               minio-logs
+        Replace_Dots        On
+        Generate_ID         On
+        Suppress_Type_Name  On
+        Include_Tag_Key     On
+    # OUTPUT to Postgres for postgres logs
+    [OUTPUT]
+        Name                es
+        Match               postgres*
+        Match_Regex         ^filename=postgres.*$
+        Host                ${elasticsearch_host}
+        Port                ${elasticsearch_port}
+        Index               postgres-logs
         Replace_Dots        On
         Generate_ID         On
         Suppress_Type_Name  On
