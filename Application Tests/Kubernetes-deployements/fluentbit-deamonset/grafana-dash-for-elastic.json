@@ -1,0 +1,350 @@
+{
+    "__inputs": [
+      {
+        "name": "DS_ELASTICSEARCH",
+        "label": "elasticsearch",
+        "description": "",
+        "type": "datasource",
+        "pluginId": "elasticsearch",
+        "pluginName": "Elasticsearch"
+      }
+    ],
+    "__elements": {},
+    "__requires": [
+      {
+        "type": "datasource",
+        "id": "elasticsearch",
+        "name": "Elasticsearch",
+        "version": "1.0.0"
+      },
+      {
+        "type": "grafana",
+        "id": "grafana",
+        "name": "ServerSage",
+        "version": "11.6.0-pre"
+      },
+      {
+        "type": "panel",
+        "id": "logs",
+        "name": "Logs",
+        "version": ""
+      },
+      {
+        "type": "panel",
+        "id": "table",
+        "name": "Table",
+        "version": ""
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- ServerSage --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [
+      {
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${datasource}"
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "dedupStrategy": "none",
+          "enableInfiniteScrolling": false,
+          "enableLogDetails": true,
+          "prettifyLogMessage": false,
+          "showCommonLabels": false,
+          "showLabels": false,
+          "showTime": true,
+          "sortOrder": "Descending",
+          "wrapLogMessage": true
+        },
+        "pluginVersion": "11.6.0-pre",
+        "repeat": "index",
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "alias": "",
+            "bucketAggs": [],
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "metrics": [
+              {
+                "id": "1",
+                "settings": {
+                  "limit": "500"
+                },
+                "type": "logs"
+              }
+            ],
+            "query": "_index:${index}",
+            "refId": "A",
+            "timeField": "@timestamp"
+          }
+        ],
+        "title": "logs",
+        "type": "logs"
+      },
+      {
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "${datasource}"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "filterable": true,
+              "inspect": true
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green"
+                }
+              ]
+            },
+            "unit": "string"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "_index"
+              },
+              "properties": [
+                {
+                  "id": "custom.width",
+                  "value": 144
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "@timestamp"
+              },
+              "properties": [
+                {
+                  "id": "custom.width",
+                  "value": 210
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "log"
+              },
+              "properties": [
+                {
+                  "id": "custom.width",
+                  "value": 950
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 13,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "id": 2,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "enablePagination": true,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": true,
+              "displayName": "kubernetes.labels.tier"
+            }
+          ]
+        },
+        "pluginVersion": "11.6.0-pre",
+        "repeat": "index",
+        "repeatDirection": "h",
+        "targets": [
+          {
+            "alias": "",
+            "bucketAggs": [],
+            "datasource": {
+              "type": "elasticsearch",
+              "uid": "${DS_ELASTICSEARCH}"
+            },
+            "metrics": [
+              {
+                "id": "1",
+                "settings": {
+                  "limit": "500"
+                },
+                "type": "logs"
+              }
+            ],
+            "query": "_index:${index}",
+            "refId": "A",
+            "timeField": "@timestamp"
+          }
+        ],
+        "title": "logs",
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "_id": true,
+                "_index": true,
+                "_source": true,
+                "_type": true,
+                "filename": false,
+                "flb-key": true,
+                "highlight": true,
+                "id": true,
+                "kubernetes.container_hash": true,
+                "sort": true
+              },
+              "includeByName": {},
+              "indexByName": {
+                "@timestamp": 3,
+                "_id": 5,
+                "_index": 6,
+                "_source": 7,
+                "_type": 8,
+                "highlight": 9,
+                "id": 10,
+                "kubernetes.container_hash": 12,
+                "kubernetes.container_image": 17,
+                "kubernetes.container_name": 2,
+                "kubernetes.docker_id": 13,
+                "kubernetes.host": 14,
+                "kubernetes.labels.app": 18,
+                "kubernetes.labels.controller-revision-hash": 19,
+                "kubernetes.labels.k8s-app": 20,
+                "kubernetes.labels.pod-template-generation": 21,
+                "kubernetes.labels.pod-template-hash": 22,
+                "kubernetes.labels.tier": 23,
+                "kubernetes.namespace_name": 0,
+                "kubernetes.pod_id": 15,
+                "kubernetes.pod_ip": 16,
+                "kubernetes.pod_name": 1,
+                "log": 4,
+                "sort": 11
+              },
+              "renameByName": {
+                "kubernetes.container_hash": "",
+                "kubernetes.container_image": "container_image",
+                "kubernetes.container_name": "container_name",
+                "kubernetes.docker_id": "docker_id",
+                "kubernetes.host": "host/node",
+                "kubernetes.labels.app": "labels.app",
+                "kubernetes.labels.controller-revision-hash": "labels.controller-revision-hash",
+                "kubernetes.labels.k8s-app": "labels.k8s-app",
+                "kubernetes.labels.pod-template-generation": "labels.pod-template-generation",
+                "kubernetes.labels.pod-template-hash": "labels.pod-template-hash",
+                "kubernetes.labels.tier": "labels.tier",
+                "kubernetes.namespace_name": "namespace",
+                "kubernetes.pod_id": "pod_id",
+                "kubernetes.pod_ip": "pod_ip",
+                "kubernetes.pod_name": "pod_name"
+              }
+            }
+          }
+        ],
+        "type": "table"
+      }
+    ],
+    "schemaVersion": 41,
+    "tags": [],
+    "templating": {
+      "list": [
+        {
+          "current": {},
+          "hide": 1,
+          "label": "datasource",
+          "name": "datasource",
+          "options": [],
+          "query": "elasticsearch",
+          "refresh": 1,
+          "regex": "",
+          "type": "datasource"
+        },
+        {
+          "baseFilters": [],
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "${datasource}"
+          },
+          "filters": [],
+          "name": "Filters",
+          "type": "adhoc"
+        },
+        {
+          "current": {},
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "${datasource}"
+          },
+          "definition": "{\n\"find\":\"terms\",\n\"field\":\"_index\",\n\"size\":1000\n} ",
+          "label": "index",
+          "name": "index",
+          "options": [],
+          "query": "{\n\"find\":\"terms\",\n\"field\":\"_index\",\n\"size\":1000\n} ",
+          "refresh": 1,
+          "regex": "",
+          "type": "query"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Logs",
+    "uid": "felruol4bzeo0a",
+    "version": 9,
+    "weekStart": ""
+  }
