@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
-  namespace: grafana
+  namespace: monitoring
 spec:
   replicas: 1
   selector:
@@ -22,8 +22,8 @@ spec:
             value: "admin"
           - name: GF_SECURITY_ADMIN_PASSWORD
             value: "serversage"
-          # - name: GF_PLUGINS_PREINSTALL
-          #   value: "grafana-llm-app,grafana-oncall-app"
+          - name: GF_PLUGINS_PREINSTALL
+            value: "grafana-llm-app,grafana-oncall-app"
         ports:
         - containerPort: 3000
 ---
@@ -31,7 +31,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
-  namespace: grafana
+  namespace: monitoring
 spec:
   selector:
     app: grafana
