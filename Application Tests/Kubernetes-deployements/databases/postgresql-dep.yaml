@@ -29,9 +29,7 @@ spec:
       labels:
         app: postgresql
       annotations:
-        fluentbit.io/parser: "postgres"  # Specify parser for Redis logs
-        logging: "enabled" 
-        # Fluentd logging options can be configured via annotations or sidecar logging agents
+        logging: "enabled,format:json"
         fluentd.io/tag: postgres.logs
         fluentd.io/address: fluent-bit.logging.svc.cluster.local:24224
         fluentd.io/async-connect: "true"
