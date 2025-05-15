@@ -177,7 +177,7 @@ spec:
         - name: KAFKA_HEAP_OPTS
           value: "-Xmx1G -Xms1G"
         - name: KAFKA_OPTS
-          value: "-Dkraft.enabled=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dcom.sun.management.jmxremote.port=5555 -Dcom.sun.management.jmxremote.rmi.port=5555"
+          value: "-Dkraft.enabled=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.host=127.0.0.1 -Dcom.sun.management.jmxremote.port=5556 -Dcom.sun.management.jmxremote.rmi.port=5555"
         - name: JMX_PORT
           value: "5555"
         command:
