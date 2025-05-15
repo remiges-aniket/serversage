@@ -8,6 +8,7 @@ kubectl create -f https://raw.githubusercontent.com/prometheus-operator/promethe
 kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
 kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
 
 # kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
 # kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
@@ -16,6 +17,7 @@ kubectl create -f https://raw.githubusercontent.com/prometheus-operator/promethe
 # kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 # kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 # kubectl delete pvc -n serversage data-thanos-store-gateway-0 prometheus-prometheus-db-prometheus-prometheus-0 prometheus-prometheus-db-prometheus-prometheus-1
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
 # kubectl get pv -n serversage
 
 echo "Step 2: Deleting existing prometheus-operator deployment..."
