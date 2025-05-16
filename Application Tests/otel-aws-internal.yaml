@@ -1,0 +1,195 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-config
+  namespace: monitoring
+data:
+  otel.yml: |
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      #otlp/opbeans:
+      #  protocols:
+      #    grpc:
+      #      endpoint: 0.0.0.0:4318
+
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+            - targets: ['0.0.0.0:8888']
+
+    processors:
+      batch:
+
+    exporters:
+      debug:
+        verbosity: detailed
+      prometheus:
+        endpoint: "0.0.0.0:9465"
+      #prometheus/opbeans:
+      #  endpoint: "localhost:9465"
+      otlp:
+        endpoint: "jaeger.monitoring.svc.cluster.local:4317"
+        tls:
+          insecure: true
+            #kafka:
+            #brokers:
+            #- "kafka.starmfv2-qa.svc.cluster.local:9092" # Kafka broker endpoint
+            #topic: "kc-aws-qa" # Kafka topic for logs (e.g. "your-log-topic")
+
+      elasticsearch:
+        endpoints: ["http://localhost:9200"]
+        logs_index: "kc-qa-logs"
+        # index: 'kc-qa-logs'
+          #flush_interval: 1s
+          #pipeline:
+          #send_timestamp: true
+
+      #otlp/opbeans:
+      #  endpoint: "jaeger:4318"
+      #  tls:
+      #    insecure: true
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+
+        metrics:
+          receivers: [otlp,prometheus]
+          processors: [batch]
+          exporters: [debug, prometheus]
+
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug, elasticsearch]
+
+        #traces/opbeans:
+        #  receivers: [otlp/opbeans]
+        #  processors: [batch]
+        #  exporters: [debug, otlp/opbeans]
+
+        #metrics/opbeans:
+        #  receivers: [otlp/opbeans]
+        #  processors: [batch]
+        #  exporters: [debug, prometheus/opbeans]
+
+        #logs/opbeans:
+        #  receivers: [otlp/opbeans]
+        #  processors: [batch]
+        #  exporters: [debug]
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: collector-pv
+  namespace: monitoring
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /bse-data/data/dev/starmfv2/otel-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: collector-pvc
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: manual
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: monitoring
+  labels:
+    app: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: collector
+        # image: private-repo:5000/otel:latest
+        image: otel/opentelemetry-collector-contrib:0.123.0
+        ports:
+        - containerPort: 4317
+          name: grpc
+        - containerPort: 4318
+          name: http
+        - containerPort: 8888
+          name: metrics-ui
+        - containerPort: 9465
+          name: app-metrics
+        volumeMounts:
+        - name: otel-config-volume
+          mountPath: /etc/otel.yml
+          subPath: otel.yml
+#        - name: collector-data
+#          mountPath: /otel
+        args:
+        - "--config=/etc/otel.yml"
+      nodeSelector:
+        name: aws-master
+
+      volumes:
+      - name: otel-config-volume
+        configMap:
+          name: otel-config
+#      - name: collector-data
+#        persistentVolumeClaim:
+#          claimName: collector-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: monitoring
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - protocol: TCP
+    port: 4317
+    targetPort: 4317
+    name: grpc
+  - protocol: TCP
+    port: 4318
+    targetPort: 4318
+    name: http
+  - protocol: TCP
+    port: 8888
+    targetPort: 8888
+    name: metrics-ui
+  - protocol: TCP
+    port: 9465
+    targetPort: 9465
+    name: app-metrics
+  type: NodePort

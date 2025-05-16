@@ -337,7 +337,6 @@ spec:
             path: /-/ready
             port: http
 ---
-# Thanos Store Gateway
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -355,16 +354,9 @@ spec:
         app: thanos-store-gateway
     spec:
       securityContext:
-        fsGroup: 1000  # Adding fsGroup to grant permissions to the volume
+        fsGroup: 1000
         runAsUser: 1000
         runAsGroup: 1000
-      # initContainers:
-      # - name: fix-permissions
-      #   image: busybox
-      #   command: ["sh", "-c", "chown -R 65534:65534 /var/thanos/store"]
-      #   volumeMounts:
-      #   - name: data
-      #     mountPath: /var/thanos/store
       containers:
       - name: thanos
         image: quay.io/thanos/thanos:v0.32.0
@@ -374,6 +366,10 @@ spec:
         - --http-address=0.0.0.0:10902
         - --data-dir=/var/thanos/store
         - --objstore.config-file=/etc/thanos/objstore.yaml
+        # Memory optimization flags:
+        - --store.index-header-posting-offsets-in-mem-sampling=128 # Increased sampling
+        - --store.enable-index-header-lazy-reader # Enable lazy loading
+        - --store.enable-lazy-expanded-postings # Lazily expand postings
         ports:
         - containerPort: 10901
           name: grpc
@@ -392,6 +388,13 @@ spec:
           httpGet:
             path: /-/ready
             port: http
+        resources:
+          requests:
+            memory: "2Gi" # Start with a reasonable request
+            cpu: "500m"
+          limits:
+            memory: "6Gi" # Set an upper limit, adjust based on observation.  Important to prevent OOM
+            cpu: "2000m"
       volumes:
       - name: config
         secret:
