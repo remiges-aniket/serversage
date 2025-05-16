@@ -1,0 +1,63 @@
+#!/bin/bash
+# Fix Prometheus Operator setup
+
+echo "Step 1: Installing Prometheus CRDs directly..."
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+# kubectl delete pvc -n serversage data-thanos-store-gateway-0 prometheus-prometheus-db-prometheus-prometheus-0 prometheus-prometheus-db-prometheus-prometheus-1
+# kubectl delete -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.71.0/example/prometheus-operator-crd/monitoring.coreos.com_probes.yaml
+# kubectl get pv -n serversage
+
+echo "Step 2: Deleting existing prometheus-operator deployment..."
+kubectl delete deployment prometheus-operator -n serversage
+
+# echo "Step 3: Extracting just the Prometheus CR from the config file..."
+# cat > prometheus-cr.yaml << 'EOF'
+# apiVersion: monitoring.coreos.com/v1
+# kind: Prometheus
+# metadata:
+#   name: prometheus
+#   namespace: serversage
+# spec:
+#   replicas: 2  # HA setup with 2 replicas
+#   serviceAccountName: prometheus
+#   serviceMonitorSelector: {}
+#   podMonitorSelector: {}
+#   probeSelector: {}
+#   scrapeInterval: "15s"
+#   evaluationInterval: "15s"
+#   retention: "30d"
+#   externalLabels:
+#     cluster: ha-cluster
+#   thanos:
+#     baseImage: quay.io/thanos/thanos
+#     version: v0.32.0
+#     objectStorageConfig:
+#       key: objstore.yaml
+#       name: thanos-objstore-config
+#   storage:
+#     volumeClaimTemplate:
+#       spec:
+#         storageClassName: standard
+#         resources:
+#           requests:
+#             storage: 4Gi
+# EOF
+
+# echo "Step 4: Apply the Prometheus CR separately..."
+# kubectl apply -f prometheus-cr.yaml
+# kubectl delete -f prometheus-cr.yaml
+
+echo "Done! Check the status with: kubectl get prometheuses -n monitoring"

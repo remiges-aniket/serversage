@@ -198,33 +198,36 @@ metadata:
   name: prometheus
   namespace: serversage
 spec:
-  replicas: 2
+  replicas: 2  # HA setup with 2 replicas
+  # securityContext:
+  #   fsGroup: 65534
+  #   runAsUser: 65534
+  #   runAsGroup: 65534
+  #   runAsNonRoot: true
   serviceAccountName: prometheus
-  podMonitorSelector: {}
   serviceMonitorSelector: {}
-  ruleSelector: {}
+  podMonitorSelector: {}
+  probeSelector: {}
+  scrapeInterval: "15s"
+  evaluationInterval: "15s"
+  retention: "30d"
+  externalLabels:
+    cluster: ha-cluster
   thanos:
-    image: quay.io/thanos/thanos:v0.32.0
+    baseImage: quay.io/thanos/thanos
     version: v0.32.0
     objectStorageConfig:
-      name: thanos-objstore-config
       key: objstore.yaml
+      name: thanos-objstore-config
   storage:
     volumeClaimTemplate:
       spec:
         storageClassName: standard
+        # storageClassName: prometheus-storage
         resources:
           requests:
-            storage: 2Gi
-  resources:
-    requests:
-      memory: 400Mi
-      cpu: 500m
-    limits:
-      memory: 2Gi
-      cpu: 1000m
-  retention: 4h
-
+            storage: 4Gi
+    
 ---
 # Prometheus Service
 apiVersion: v1
@@ -327,24 +330,6 @@ spec:
     targetPort: metrics
   selector:
     app.kubernetes.io/name: node-exporter
-
----
-# PersistentVolume for Thanos Store Gateway
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: thanos-store-gateway-pv
-  namespace: serversage
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: standard
-  hostPath:
-    path: /data/thanos-store-gateway
-
 ---
 # Thanos Querier
 apiVersion: apps/v1
@@ -371,8 +356,8 @@ spec:
         - --grpc-address=0.0.0.0:10901
         - --query.replica-label=prometheus_replica
         - --query.replica-label=replica
-        - --store=dnssrv+_grpc._tcp.prometheus-operated.monitoring.svc.cluster.local
-        - --store=dnssrv+_grpc._tcp.thanos-store-gateway.monitoring.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.prometheus-operated.serversage.svc.cluster.local
+        - --store=dnssrv+_grpc._tcp.thanos-store-gateway.serversage.svc.cluster.local
         ports:
         - containerPort: 9090
           name: http
@@ -386,7 +371,6 @@ spec:
           httpGet:
             path: /-/ready
             port: http
-
 ---
 # Thanos Store Gateway
 apiVersion: apps/v1
@@ -405,6 +389,17 @@ spec:
       labels:
         app: thanos-store-gateway
     spec:
+      securityContext:
+        fsGroup: 65534  # Adding fsGroup to grant permissions to the volume
+        runAsUser: 65534
+        runAsGroup: 65534
+      # initContainers:
+      # - name: fix-permissions
+      #   image: busybox
+      #   command: ["sh", "-c", "chown -R 65534:65534 /var/thanos/store"]
+      #   volumeMounts:
+      #   - name: data
+      #     mountPath: /var/thanos/store
       containers:
       - name: thanos
         image: quay.io/thanos/thanos:v0.32.0
@@ -440,80 +435,12 @@ spec:
   - metadata:
       name: data
     spec:
+      # storageClassName: thanos-store-gateway-storage
       storageClassName: standard
       accessModes: ["ReadWriteOnce"]
       resources:
         requests:
-          storage: 3Gi
-
----
-# Grafana Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: serversage
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-    spec:
-      securityContext:
-        fsGroup: 472
-        supplementalGroups:
-          - 0
-      containers:
-      - name: grafana
-        image: aniketxshinde/serversage:latest
-        ports:
-        - containerPort: 3000
-          name: http
-        volumeMounts:
-        - name: grafana-storage
-          mountPath: /var/lib/grafana
-        - name: grafana-datasources
-          mountPath: /etc/grafana/provisioning/datasources
-        env:
-        - name: GF_SECURITY_ADMIN_USER
-          value: admin
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: admin
-        - name: GF_USERS_ALLOW_SIGN_UP
-          value: "false"
-      volumes:
-      - name: grafana-storage
-        emptyDir: {}
-      - name: grafana-datasources
-        configMap:
-          name: grafana-datasources
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-datasources
-  namespace: serversage
-data:
-  datasources.yaml: |
-    apiVersion: 1
-    datasources:
-    - name: Thanos
-      type: prometheus
-      url: http://thanos-querier.monitoring.svc.cluster.local:9090
-      access: proxy
-      isDefault: true
-      editable: true
-    - name: prometheus
-      type: prometheus
-      url: http://prometheus-operated.monitoring.svc.cluster.local:9090
-      access: proxy
-      editable: true
-
+          storage: 10Gi
 ---
 # Network Services
 apiVersion: v1
@@ -531,20 +458,6 @@ spec:
     targetPort: 10901
   selector:
     app: thanos-querier
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: grafana
-  namespace: serversage
-spec:
-  ports:
-  - name: http
-    port: 3000
-    targetPort: 3000
-  selector:
-    app: grafana
 
 ---
 apiVersion: v1
@@ -710,6 +623,119 @@ spec:
     targetPort: telemetry
   selector:
     app.kubernetes.io/name: kube-state-metrics
+
+---
+# # Optional: Ingress for Grafana and Thanos Query UI
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: monitoring
+#   namespace: serversage
+#   annotations:
+#     spec.ingressClassName: nginx
+# spec:
+#   rules:
+#   - host: grafana.local
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: grafana
+#             port:
+#               number: 3000
+#   - host: thanos.local
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: thanos-querier
+#             port:
+#               number: 9090
+
+---
+# # Grafana Deployment
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: grafana
+#   namespace: serversage
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: grafana
+#   template:
+#     metadata:
+#       labels:
+#         app: grafana
+#     spec:
+#       securityContext:
+#         fsGroup: 472
+#         supplementalGroups:
+#           - 0
+#       containers:
+#       - name: grafana
+#         image: aniketxshinde/serversage:latest
+#         ports:
+#         - containerPort: 3000
+#           name: http
+#         volumeMounts:
+#         - name: grafana-storage
+#           mountPath: /var/lib/grafana
+#         - name: grafana-datasources
+#           mountPath: /etc/grafana/provisioning/datasources
+#         env:
+#         - name: GF_SECURITY_ADMIN_USER
+#           value: admin
+#         - name: GF_SECURITY_ADMIN_PASSWORD
+#           value: admin
+#         - name: GF_USERS_ALLOW_SIGN_UP
+#           value: "false"
+#       volumes:
+#       - name: grafana-storage
+#         emptyDir: {}
+#       - name: grafana-datasources
+#         configMap:
+#           name: grafana-datasources
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: grafana-datasources
+#   namespace: serversage
+# data:
+#   datasources.yaml: |
+#     apiVersion: 1
+#     datasources:
+#     - name: Thanos
+#       type: prometheus
+#       url: http://thanos-querier.serversage.svc.cluster.local:9090
+#       access: proxy
+#       isDefault: true
+#       editable: true
+#     - name: prometheus
+#       type: prometheus
+#       url: http://prometheus-operated.serversage.svc.cluster.local:9090
+#       access: proxy
+#       editable: true
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: grafana
+#   namespace: serversage
+# spec:
+#   ports:
+#   - name: http
+#     port: 3000
+#     targetPort: 3000
+#   selector:
+#     app: grafana
 
 ---
 # ServiceMonitor for Kube State Metrics
