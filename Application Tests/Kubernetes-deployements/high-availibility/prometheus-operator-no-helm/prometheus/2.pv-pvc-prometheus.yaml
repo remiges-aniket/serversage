@@ -2,9 +2,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: thanos-store-gateway-pv-0
-  labels:
-    pv-name: thanos-store-gateway-pv-0
+  name: thanos-store-gateway-data
 spec:
   capacity:
     storage: 1Gi
@@ -18,11 +16,22 @@ spec:
     type: DirectoryOrCreate
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: thanos-store-gateway-data
+  namespace: serversage
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: prometheus-db-prometheus-0
-  # labels:
-  #   pv-name: prometheus-db-prometheus-0
 spec:
   capacity:
     storage: 1Gi
@@ -31,9 +40,21 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: prometheus-storage
   hostPath:
-    # path: /data/prometheus-0
     path: /bse-data/data/monitoring/prometheus-ha/prometheus-0
     type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-db-prometheus-0
+  namespace: serversage
+spec:
+  storageClassName: prometheus-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 400Mi
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -53,34 +74,7 @@ spec:
     path: /bse-data/data/monitoring/prometheus-ha/prometheus-1
     type: DirectoryOrCreate
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: thanos-store-gateway-data
-  namespace: serversage
-  labels:
-    pv-name: thanos-store-gateway-pv-0
-spec:
-  storageClassName: local-storage
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-db-prometheus-0
-  namespace: serversage
-spec:
-  storageClassName: prometheus-storage
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 400Mi
----
+
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -93,3 +87,5 @@ spec:
   resources:
     requests:
       storage: 400Mi
+
+
