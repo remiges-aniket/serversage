@@ -71,7 +71,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: prometheus-prometheus-db-prometheus-0
+  name: prometheus-db-prometheus-0
   namespace: serversage
 spec:
   storageClassName: prometheus-storage
@@ -84,7 +84,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: prometheus-prometheus-db-prometheus-1
+  name: prometheus-db-prometheus-1
   namespace: serversage
 spec:
   storageClassName: prometheus-storage
