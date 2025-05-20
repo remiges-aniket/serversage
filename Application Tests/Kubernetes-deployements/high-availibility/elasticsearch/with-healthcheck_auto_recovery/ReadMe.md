@@ -1,3 +1,204 @@
+# Standard Operating Procedure (SOP) for Elasticsearch Deployment
+
+## Overview
+This SOP provides instructions for deploying a production-ready Elasticsearch cluster on Kubernetes. The deployment consists of master nodes, data nodes, and client nodes working together to provide a scalable search and analytics solution.
+
+## Components
+1. **Master Nodes**: Manage cluster-wide actions like creating/deleting indices and tracking cluster nodes
+2. **Data Nodes**: Store data and execute search/indexing operations
+3. **Client Nodes**: Handle API requests and forward operations to data nodes
+
+## Deployment Workflow
+
+### 1. Prerequisites
+- A running Kubernetes cluster
+- `kubectl` CLI tool installed and configured
+- Storage provisioning capability for persistent volumes
+- Sufficient resources as specified in the configuration
+---
+
+## Configurable Parameters
+
+### Cluster Configuration
+
+| Parameter | Current Value | Description | Location |
+|-----------|--------------|-------------|----------|
+| Cluster Name | `es-cluster` | Name of the Elasticsearch cluster | ConfigMap: `cluster.name` |
+| Master Node Count | 1 (replicas) | Number of master nodes | StatefulSet: `elasticsearch-master` replicas |
+| Data Node Count | 2 (replicas) | Number of data nodes | StatefulSet: `elasticsearch-data` replicas |
+| Client Node Count | 1 (replicas) | Number of client nodes | Deployment: `elasticsearch-client` replicas |
+
+### Resource Allocation : (Modify this according to your choice)
+
+| Component | CPU Request | CPU Limit | Memory Request | Memory Limit |
+|-----------|------------|-----------|----------------|--------------|
+| Master Nodes | 500m | 800m | 1Gi | 2Gi |
+| Data Nodes | 500m | 800m | 2Gi | 3Gi |
+| Client Nodes | 500m | 800m | 1Gi | 2Gi |
+
+### Storage Configuration : (Modify this according to your storage)
+
+| Component | Storage Size | Storage Class |
+|-----------|-------------|---------------|
+| Master Nodes | 1Gi | elasticsearch-storage |  
+| Data Nodes | 2Gi | elasticsearch-storage |
+
+### JVM Configuration
+
+| Component | JVM Heap Size | Location |
+|-----------|--------------|----------|
+| Master Nodes | -Xms1g -Xmx1g | Environment variable: `ES_JAVA_OPTS` |
+| Data Nodes | -Xms2g -Xmx2g | Environment variable: `ES_JAVA_OPTS` |
+| Client Nodes | -Xms1g -Xmx1g | Environment variable: `ES_JAVA_OPTS` |
+
+### Network Configuration
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| Discovery Seed Hosts | elasticsearch-master-[0-2].elasticsearch-master.elastic.svc.cluster.local | Elasticsearch node discovery endpoints |
+| Minimum Master Nodes | 1 | Minimum number of master nodes to form a quorum |
+| Transport Ping Schedule | 5s | How often nodes ping each other |
+
+### Security Configuration
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| X-Pack Security | Disabled | Security features status |
+| X-Pack Monitoring | Enabled | Monitoring features status |
+
+
+---
+### 2. Deployment Steps
+
+#### Step 1: Create the Namespace
+```bash
+kubectl apply -f namespace.yaml
+```
+This creates the `elastic` namespace with Prometheus monitoring enabled.
+
+#### Step 2: Verify Namespace Creation
+```bash
+kubectl get namespace elastic
+```
+#### Step 3: Deployment of cluster
+```bash
+kubectl apply -f elastic.yaml
+```
+
+#### Step 4: Monitor Deployment Progress
+```bash
+kubectl get pods -n elastic -w
+```
+
+#### Step 5: Verify Services are Running
+```bash
+kubectl get services -n elastic
+```
+
+#### Step 6: Check Cluster Health
+```bash
+kubectl exec -it elasticsearch-client-[pod-id] -n elastic -- curl -X GET "localhost:9200/_cluster/health?pretty"
+```
+
+#### Step 7: Access Elasticsearch
+```bash
+# Port forwarding for local access
+kubectl port-forward svc/elasticsearch-client 9200:9200 -n elastic
+```
+Access Elasticsearch via: http://localhost:9200
+
+## Architecture and Workflow Explanation
+
+1. **Initialization Flow**:
+   - Namespace and ConfigMap are created
+   - Persistent volumes are provisioned
+   - Master nodes are deployed first
+   - Data nodes connect to master nodes
+   - Client nodes establish connections to both
+
+2. **Request Handling Flow**:
+   - External requests are received by client nodes
+   - Client nodes route search requests to data nodes
+   - Data nodes process searches and return results
+   - Master nodes coordinate cluster state changes
+
+3. **Data Storage Flow**:
+   - Incoming data is received by client nodes
+   - Data is distributed across data nodes based on sharding
+   - Each shard has replicas for redundancy 
+   - Master nodes track shard allocation
+
+## Configurable Parameters
+
+## Shards and Replicas
+
+### Default Configuration
+- **Primary Shards**: The configuration doesn't explicitly set the number of primary shards, so Elasticsearch will use its default (1 primary shard per index)
+- **Replica Shards**: The configuration doesn't explicitly set replica count, so Elasticsearch will use its default (1 replica per primary shard)
+
+### Relevant Settings
+- For a production environment, you would typically configure index settings with proper shard counts:
+  ```
+  PUT /my_index
+  {
+    "settings": {
+      "number_of_shards": 3,
+      "number_of_replicas": 1
+    }
+  }
+  ```
+
+## Detailed Workflow Explanation
+
+1. **Startup Process**:
+   - Init containers run with privileged access to set kernel parameters and fix permissions
+   - Master nodes start first and establish a cluster with election of a leader
+   - Data nodes join the cluster using the master nodes as seed hosts
+   - Client nodes connect to provide the API gateway to the cluster
+
+2. **Data Indexing**:
+   - Documents are sent to client nodes
+   - Client nodes determine which shard should hold the document
+   - Document is routed to appropriate data node
+   - Data is persisted to disk on the data node
+   - If configured, replicas are synchronized across other data nodes
+
+3. **Search Process**:
+   - Search query arrives at client node
+   - Client node broadcasts to relevant shards across data nodes
+   - Each data node performs local search on its shards
+   - Results are aggregated by the coordinating client node
+   - Final result returned to the requester
+
+4. **Cluster Maintenance**:
+   - Master nodes monitor health of all nodes
+   - If a data node fails, master nodes reassign its shards to other nodes
+   - The cluster continuously rebalances to ensure even data distribution
+
+## Common Issues and Troubleshooting
+
+1. **Cluster Health Is Red**:
+   ```bash
+   kubectl exec -it elasticsearch-client-[pod-id] -n elastic -- curl localhost:9200/_cluster/health
+   ```
+   Check for unassigned shards or node failures.
+
+2. **Memory Pressure**:
+   ```bash
+   kubectl top pods -n elastic
+   ```
+   Consider increasing JVM heap or Kubernetes resource limits.
+
+3. **Storage Issues**:
+   ```bash
+   kubectl get pv -n elastic
+   ```
+   Ensure persistent volumes are properly provisioned.
+
+-----------------------------------------------------------------------
+
+FAQ:
+
 **Here i've answered few answers that one of my coliuge have asked me, like:**
 - Explain the requirements for the mentioned manifest file to run. Also, explain what the difference is between the master node, data node, and client node given in the shared YAML file, and also why it is needed. Are there any replications also? And tell me your view on that ! 
 
@@ -192,14 +393,3 @@ Specifically:
 Those are internal roles for the cluster and not meant for external access or ingestion and `service/elasticsearch` is for devOps & debbuging only.
 
 ---
-
-kubectl apply -f namespace.yaml
-kubectl apply -f elasticsearch-ha-cluster.yaml
-
-kubectl delete -f elasticsearch-ha-cluster.yaml
-
-or
-
-kubectl apply -f elasticsearch-1-node-ha-cluster.yaml 
-
-kubectl delete -f elasticsearch-1-node-ha-cluster.yaml 
