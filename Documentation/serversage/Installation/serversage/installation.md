@@ -104,12 +104,21 @@ After=network-online.target
 
 [Service]
 User=prometheus
-ExecStart=/usr/local/bin/prometheus \
-  --config.file=/etc/prometheus/prometheus.yml \
-  --storage.tsdb.path=/var/lib/prometheus/ \
-  --storage.tsdb.retention.time=30d \
-  --web.console.templates=/etc/prometheus/consoles \
-  --web.console.libraries=/etc/prometheus/console_libraries
+# ExecStart=/usr/local/bin/prometheus \
+#   --config.file=/etc/prometheus/prometheus.yml \
+#   --storage.tsdb.path=/var/lib/prometheus/ \
+#   --storage.tsdb.retention.time=30d \
+#   --web.console.templates=/etc/prometheus/consoles \
+#   --web.console.libraries=/etc/prometheus/console_libraries
+
+
+ExecStart=/usr/local/bin/prometheus  \
+    --config.file=/etc/prometheus/prometheus.yml  \
+    --storage.tsdb.path=/var/serversage/data/prometheus-tsdb  \
+    --storage.tsdb.retention.time=30d  \
+    --web.console.templates=/var/serversage/data/prometheus/consoles  \
+    --web.console.libraries=/var/serversage/data/prometheus/console_libraries
+
 
 [Install]
 WantedBy=multi-user.target
@@ -191,6 +200,11 @@ sudo apt-get install grafana -y
 sudo systemctl enable grafana-server
 sudo systemctl start grafana-server
 ```
+
+
+port allow on machine:
+
+ufw allow 9100/tcp
 
 ---
 
