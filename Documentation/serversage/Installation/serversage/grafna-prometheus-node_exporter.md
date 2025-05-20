@@ -60,7 +60,6 @@ sudo chown prometheus:prometheus /usr/local/bin/prometheus /usr/local/bin/promto
 3. Move configuration:
 
 ```bash
-sudo cp -r consoles/ console_libraries/ /etc/prometheus/
 sudo cp prometheus.yml /etc/prometheus/
 sudo chown -R prometheus:prometheus /etc/prometheus
 ```
@@ -113,11 +112,11 @@ User=prometheus
 
 
 ExecStart=/usr/local/bin/prometheus  \
-    --config.file=/etc/prometheus/prometheus.yml  \
+    --config.file=/etc/prometheus/prometheus.yml  \                               # always add new targets into this file
     --storage.tsdb.path=/var/serversage/data/prometheus-tsdb  \
     --storage.tsdb.retention.time=30d  \
-    --web.console.templates=/var/serversage/data/prometheus/consoles  \
-    --web.console.libraries=/var/serversage/data/prometheus/console_libraries
+    --web.console.templates=/var/serversage/data/prometheus/consoles  \           # change this according to your preference
+    --web.console.libraries=/var/serversage/data/prometheus/console_libraries     # change this according to your preference
 
 
 [Install]
@@ -234,4 +233,3 @@ ufw allow 9100/tcp
 
 ---
 
-Let me know if you want the same setup using **Docker** or **Kubernetes**.
