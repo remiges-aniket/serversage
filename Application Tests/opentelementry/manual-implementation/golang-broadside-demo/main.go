@@ -83,8 +83,10 @@ func simulateMetrics(ctx context.Context) {
 				provider := providerOptions[rand.Intn(len(providerOptions))]
 				status := statusOptions[rand.Intn(len(statusOptions))]
 
-				// Generate a random increment value between 1 and 5
-				incrementValue := int64(rand.Intn(10) * rand.Intn(5))
+				// Ensure a positive and consistent increment value.
+				// For a continuously increasing graph, we want a minimum increment.
+				// You can adjust this value based on how steep you want the increase.
+				incrementValue := int64(5 + rand.Intn(100))
 
 				// Add to the counter with specific attributes for this event.
 				emailCounter.Add(ctx, incrementValue,
@@ -101,7 +103,7 @@ func simulateMetrics(ctx context.Context) {
 				)
 
 				// Simulate work/delay before the next event.
-				time.Sleep(2 * time.Second)
+				time.Sleep(5 * time.Second)
 			}
 		}
 	}()
