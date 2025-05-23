@@ -30,6 +30,7 @@ const (
 	StateKey    = attribute.Key("state")
 	ProviderKey = attribute.Key("provider")
 	StatusKey   = attribute.Key("status")
+	APP_PORT    = ":8088"
 )
 
 // initMetrics initializes the OpenTelemetry MeterProvider and Prometheus exporter.
@@ -65,11 +66,12 @@ func initMetrics(serviceName, serviceInstanceID string) (*sdkmetric.MeterProvide
 
 // simulateMetrics generates random email events and adds them to the counter.
 func simulateMetrics(ctx context.Context) {
+	incrementValue := int64(0)
 
 	// Options for random attribute values
 	dcsOptions := []string{"dcs1", "lsp", "lsh"}
 	providerOptions := []string{"gmail", "hotmail", "outlook", "rediffmail", "others"}
-	statusOptions := []string{"dispatched", "sent", "bounced", "rejected"}
+	statusOptions := []string{"in_transit", "sent", "bounced", "rejected"}
 
 	go func() {
 		for {
@@ -86,8 +88,17 @@ func simulateMetrics(ctx context.Context) {
 				// Ensure a positive and consistent increment value.
 				// For a continuously increasing graph, we want a minimum increment.
 				// You can adjust this value based on how steep you want the increase.
-				incrementValue := int64(5 + rand.Intn(100))
 
+				switch status {
+				case "in_transit":
+					incrementValue = incrementValue + int64(8+rand.Intn(200))
+				case "sent":
+					incrementValue = incrementValue + int64(60+rand.Intn(400))
+				case "bounced":
+					incrementValue = incrementValue + int64(20+rand.Intn(200))
+				case "rejected":
+					incrementValue = incrementValue + int64(5+rand.Intn(200))
+				}
 				// Add to the counter with specific attributes for this event.
 				emailCounter.Add(ctx, incrementValue,
 					// 6. Define the service's resource attributes.
@@ -103,7 +114,7 @@ func simulateMetrics(ctx context.Context) {
 				)
 
 				// Simulate work/delay before the next event.
-				time.Sleep(5 * time.Second)
+				time.Sleep(3 * time.Second)
 			}
 		}
 	}()
@@ -145,7 +156,7 @@ func main() {
 
 	// Set up the HTTP server to expose Prometheus metrics.
 	http.Handle("/metrics", promhttp.Handler())
-	log.Println("Prometheus metrics server listening on :8080/metrics")
+	log.Println("Prometheus metrics server listening on " + APP_PORT + "/metrics")
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(APP_PORT, nil))
 }
