@@ -67,6 +67,10 @@ func initMetrics(serviceName, serviceInstanceID string) (*sdkmetric.MeterProvide
 // simulateMetrics generates random email events and adds them to the counter.
 func simulateMetrics(ctx context.Context) {
 	incrementValue := int64(0)
+	transit := int64(0)
+	sent := int64(0)
+	bounced := int64(0)
+	rejected := int64(0)
 
 	// Options for random attribute values
 	dcsOptions := []string{"dcs1", "lsp", "lsh"}
@@ -88,16 +92,20 @@ func simulateMetrics(ctx context.Context) {
 				// Ensure a positive and consistent increment value.
 				// For a continuously increasing graph, we want a minimum increment.
 				// You can adjust this value based on how steep you want the increase.
-
+				incrementValue = 0
 				switch status {
 				case "in_transit":
-					incrementValue = incrementValue + int64(8+rand.Intn(200))
+					transit = transit + int64(8+rand.Intn(200))
+					incrementValue = transit
 				case "sent":
-					incrementValue = incrementValue + int64(60+rand.Intn(400))
+					sent = sent + int64(60+rand.Intn(400))
+					incrementValue = sent
 				case "bounced":
-					incrementValue = incrementValue + int64(20+rand.Intn(200))
+					bounced = bounced + int64(20+rand.Intn(200))
+					incrementValue = bounced
 				case "rejected":
-					incrementValue = incrementValue + int64(5+rand.Intn(200))
+					rejected = rejected + int64(5+rand.Intn(200))
+					incrementValue = rejected
 				}
 				// Add to the counter with specific attributes for this event.
 				emailCounter.Add(ctx, incrementValue,
