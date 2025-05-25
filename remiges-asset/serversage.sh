@@ -24,3 +24,21 @@ find /usr/share/grafana/public/build/ -name *.js -exec sed -i 's|{target:"_blank
 find /usr/share/grafana/public/build/ -name *.js -exec sed -i 's|{target:"_blank",id:"version",text:`v${e.version} (${e.commit})`,url:i?"https://github.com/grafana/grafana/blob/main/CHANGELOG.md":void 0}||g' {} \;
 
 find /usr/share/grafana/public/build/ -name *.js -exec sed -i 's|{target:"_blank",id:"updateVersion",text:"New version available!",icon:"download-alt",url:"https://grafana.com/grafana/download?utm_source=grafana_footer"}||g' {} \;
+
+
+# Customize Mega and Help menu in index.html
+sed -i "s|\[\[.NavTree\]\],|nav,|g; \
+    s|window.grafanaBootData = {| \
+    let nav = [[.NavTree]]; \
+    const dashboards = nav.find((element) => element.id === 'dashboards/browse'); \
+    if (dashboards) { dashboards['children'] = [];} \
+    const connections = nav.find((element) => element.id === 'connections'); \
+    if (connections) { connections['url'] = '/datasources'; connections['children'].shift(); } \
+    const help = nav.find((element) => element.id === 'help'); \
+    if (help) { help['subTitle'] = 'ServerSage 12.0'; help['children'] = [];} \
+    window.grafanaBootData = {|g" \
+    /usr/share/grafana/public/views/index.html && \
+    sed -i "s|window.grafanaBootData = {| \
+    nav.splice(3, 2); \
+    window.grafanaBootData = {|g" \
+    /usr/share/grafana/public/views/index.html
