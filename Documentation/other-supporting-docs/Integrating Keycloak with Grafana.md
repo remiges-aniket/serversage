@@ -135,5 +135,3 @@ For more clarification refer [this](https://github.com/remiges-aniket/serversage
 * [Keycloak Documentation](https://www.keycloak.org/documentation)
 
 ---
-
-Feel free to customize this guide further to match your specific environment and requirements.
