@@ -97,3 +97,15 @@ rm -rf \
 find /usr/share/grafana/public/build/ -name "*.js" -type f \
     -exec sed -i 's|.id==="enterprise"|.id==="notanenterprise"|g' {} \; \
     -exec sed -i 's|.id==="cloud"|.id==="notacloud"|g' {} \;
+
+# Remove native panels
+rm -rf \
+    /usr/share/grafana/public/app/plugins/panel/news \
+    /usr/share/grafana/public/app/plugins/panel/alertlist \
+    /usr/share/grafana/public/app/plugins/panel/annolist \
+    /usr/share/grafana/public/app/plugins/panel/dashlist \
+    /usr/share/grafana/public/app/plugins/panel/geomap \
+    /usr/share/grafana/public/app/plugins/panel/table-old \
+    /usr/share/grafana/public/app/plugins/panel/traces \
+    /usr/share/grafana/public/app/plugins/panel/flamegraph \
+
