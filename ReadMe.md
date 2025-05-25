@@ -1,9 +1,9 @@
 # ServerSage
-# My Testing Experience - Repository and Test Cases
+## My Testing Experience - Documentaion and Application test cases
 
-This repository contains various test cases and related documentation reflecting my experience in software observibility. The structure and content here are designed to showcase different testing methodologies, tools, and scenarios I've encountered.
+This repository contains various application test cases and related documentation reflecting my experience in software monitoring, observibility. The structure and content here are designed to showcase different testing methodologies, tools, and scenarios I've encountered.
 
-The accompanying documents provide further context and details related to these test cases, often created in alignment with the specific requirements and constraints of projects I've worked on.
+The accompanying documents provide further context and details related to these application test cases, often created in alignment with the specific requirements and constraints of projects I've worked on.
 
 **Version Specificity:**
 
