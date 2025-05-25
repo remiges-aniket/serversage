@@ -42,3 +42,13 @@ sed -i "s|\[\[.NavTree\]\],|nav,|g; \
     nav.splice(3, 2); \
     window.grafanaBootData = {|g" \
     /usr/share/grafana/public/views/index.html
+
+# Update JavaScript files for branding and feature toggles
+find /usr/share/grafana/public/build/ -name "*.js" -type f \
+    -exec sed -i 's|AppTitle="Grafana"|AppTitle="ServerSage"|g' {} \; \
+    -exec sed -i 's|LoginTitle="Welcome to Grafana"|LoginTitle="Welcome to ServerSage"|g' {} \; \
+    -exec sed -i 's|\[{target:"_blank",id:"documentation".*grafana_footer"}\]|\[\]|g' {} \; \
+    -exec sed -i 's|({target:"_blank",id:"license",.*licenseUrl})|()|g' {} \; \
+    -exec sed -i 's|({target:"_blank",id:"version",text:..versionString,url:.?"https://github.com/grafana/grafana/blob/main/CHANGELOG.md":void 0})|()|g' {} \; \
+    -exec sed -i 's|(0,t.jsx)(d.I,{tooltip:(0,b.t)("dashboard.toolbar.switch-old-dashboard","Switch to old dashboard page"),icon:"apps",onClick:()=>{s.Ny.partial({scenes:!1})}},"view-in-old-dashboard-button")|null|g' {} \; \
+    -exec sed -i 's|.push({target:"_blank",id:"version",text:`${..edition}${.}`,url:..licenseUrl,icon:"external-link-alt"})||g' {} \;
