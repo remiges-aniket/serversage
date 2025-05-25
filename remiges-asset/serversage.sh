@@ -55,3 +55,40 @@ find /usr/share/grafana/public/build/ -name "*.js" -type f \
 
 # Update feature toggles in configuration
 sed -i 's|\[feature_toggles\]|\[feature_toggles\]\npinNavItems = false\nonPremToCloudMigrations = false\ncorrelations = false|g' /usr/share/grafana/conf/defaults.ini
+
+
+##################################################################
+# CLEANUP - Remove unused data sources and panels
+##################################################################
+# Remove native data sources
+rm -rf \
+    /usr/share/grafana/public/app/plugins/datasource/elasticsearch \
+    /usr/share/grafana/public/build/elasticsearch* \
+    /usr/share/grafana/public/app/plugins/datasource/graphite \
+    /usr/share/grafana/public/build/graphite* \
+    /usr/share/grafana/public/app/plugins/datasource/opentsdb \
+    /usr/share/grafana/public/build/opentsdb* \
+    /usr/share/grafana/public/app/plugins/datasource/influxdb \
+    /usr/share/grafana/public/build/influxdb* \
+    /usr/share/grafana/public/app/plugins/datasource/mssql \
+    /usr/share/grafana/public/build/mssql* \
+    /usr/share/grafana/public/app/plugins/datasource/mysql \
+    /usr/share/grafana/public/build/mysql* \
+    /usr/share/grafana/public/app/plugins/datasource/tempo \
+    /usr/share/grafana/public/build/tempo* \
+    /usr/share/grafana/public/app/plugins/datasource/jaeger \
+    /usr/share/grafana/public/build/jaeger* \
+    /usr/share/grafana/public/app/plugins/datasource/zipkin \
+    /usr/share/grafana/public/build/zipkin* \
+    /usr/share/grafana/public/app/plugins/datasource/azuremonitor \
+    /usr/share/grafana/public/build/azureMonitor* \
+    /usr/share/grafana/public/app/plugins/datasource/cloudwatch \
+    /usr/share/grafana/public/build/cloudwatch* \
+    /usr/share/grafana/public/app/plugins/datasource/cloud-monitoring \
+    /usr/share/grafana/public/build/cloudMonitoring* \
+    /usr/share/grafana/public/app/plugins/datasource/parca \
+    /usr/share/grafana/public/build/parca* \
+    /usr/share/grafana/public/app/plugins/datasource/phlare \
+    /usr/share/grafana/public/build/phlare* \
+    /usr/share/grafana/public/app/plugins/datasource/grafana-pyroscope-datasource \
+    /usr/share/grafana/public/build/pyroscope*
