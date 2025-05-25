@@ -92,3 +92,8 @@ rm -rf \
     /usr/share/grafana/public/build/phlare* \
     /usr/share/grafana/public/app/plugins/datasource/grafana-pyroscope-datasource \
     /usr/share/grafana/public/build/pyroscope*
+
+# Remove Cloud and Enterprise categories from JS files
+find /usr/share/grafana/public/build/ -name "*.js" -type f \
+    -exec sed -i 's|.id==="enterprise"|.id==="notanenterprise"|g' {} \; \
+    -exec sed -i 's|.id==="cloud"|.id==="notacloud"|g' {} \;
