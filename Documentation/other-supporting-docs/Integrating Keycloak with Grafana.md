@@ -125,8 +125,15 @@ sudo systemctl restart grafana-server
 * **Client Secret Issues**: Verify that the client secret in Grafana matches the one in Keycloak.
 * **Role Mapping Not Working**: Check the mappers in Keycloak to ensure roles are being sent in the token.
 
-For more clarification refer [this](https://github.com/remiges-aniket/serversage/blob/main/Documentation/other-supporting-docs/Integrating%20Keycloak%20with%20Grafana%20Example.md) raw example documentation.
+For more clarification refer [this raw example documentation.](https://github.com/remiges-aniket/serversage/blob/main/Documentation/other-supporting-docs/Integrating%20Keycloak%20with%20Grafana%20Example.md) 
 
+or watch the video:
+
+## Keycloak with Grafana Integration Video:
+
+<iframe width="560" height="315" src="https://youtu.be/y9NnQse7UtM" title="Keycloak with Grafana Integration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+This is some text below the video.
 ---
 
 ## 📚 References
