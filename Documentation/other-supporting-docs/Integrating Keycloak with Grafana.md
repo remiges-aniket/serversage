@@ -131,7 +131,7 @@ or watch the video:
 
 ## Keycloak with Grafana Integration Video:
 
-<iframe width="560" height="315" src="https://youtu.be/y9NnQse7UtM" title="Keycloak with Grafana Integration" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<video src="[path/to/video.mp4](https://youtu.be/y9NnQse7UtM)" width="560" height="315" controls></video>
 
 This is some text below the video.
 ---
