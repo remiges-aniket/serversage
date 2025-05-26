@@ -129,9 +129,10 @@ For more clarification refer [this raw example documentation.](https://github.co
 
 or watch the video:
 
-## Keycloak with Grafana Integration Video:
+## Keycloak with Grafana Integration Video [click on the image below]:
 
-<video src="[path/to/video.mp4](https://youtu.be/y9NnQse7UtM)" width="560" height="315" controls></video>
+[<img src="./images/yt-thumbnil.png" alt="Watch the video" width="560" height="315">](https://youtu.be/y9NnQse7UtM)
+
 
 This is some text below the video.
 ---
