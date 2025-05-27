@@ -7,7 +7,7 @@
         ```bash
         sudo nano /etc/systemd/system/brodside-email.service
         ```
-    * Paste the following content into the file:
+    * Paste the following content into the file (logs to journalctl):
         ```ini
         [Unit]
         Description=Brodside Email Application
@@ -23,6 +23,23 @@
         StandardOutput=journal # Redirect stdout to journald
         StandardError=journal  # Redirect stderr to journald
 
+        [Install]
+        WantedBy=multi-user.target
+        ```
+
+        or you can run it as nohup (logs to path given by you):
+
+        ```ini
+        [Unit]
+        Description=Brodside Email Application
+        After=network.target
+        
+        [Service]
+        User=serversage
+        WorkingDirectory=/var/serversage/demo-application/
+        ExecStart=nohup /var/serversage/demo-application/brodside-email > /tmp/brodside.log 2>&1 &
+        Restart=on-failure
+        RestartSec=5s # Wait 5 seconds before attempting restart
         [Install]
         WantedBy=multi-user.target
         ```
