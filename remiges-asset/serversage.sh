@@ -58,6 +58,24 @@ sed -i 's|\[feature_toggles\]|\[feature_toggles\]\npinNavItems = false\nonPremTo
 
 
 ##################################################################
+# ALERT : change alrt logo in email
+##################################################################
+find /usr/share/grafana/public/emails/ -name "*.html" -type f \
+    -exec sed -i 's|"https://grafana.com/static/assets/img/logo_new_transparent_light_400x100.png"|"https://github.com/remiges-aniket/serversage/blob/main/remiges-asset/img/Remiges-Logo-ServerSage-Straight-2048x577.png"|g' {} \;
+    
+find /usr/share/grafana/public/emails/ -name "*.html" -type f \
+    -exec sed -i 's|"https://grafana.com/static/assets/img/logo_new_transparent_light_400x100.png"|"https://www.remiges.tech/wp-content/uploads/2024/07/Remiges-Logo-ServerSage-Straight-2048x577.png"|g' {} \;
+    
+find /usr/share/grafana/public/emails/ -name "*.txt" -type f \
+    -exec sed -i 's|"https://grafana.com/static/assets/img/logo_new_transparent_light_400x100.png"|"https://www.remiges.tech/wp-content/uploads/2024/07/Remiges-Logo-ServerSage-Straight-2048x577.png"|g' {} \;  
+    
+find /usr/share/grafana/public/emails/ -name "*.txt" -type f \
+    -exec sed -i 's|"https://grafana.com/static/assets/img/logo_new_transparent_light_400x100.png"|"https://github.com/remiges-aniket/serversage/blob/main/remiges-asset/img/Remiges-Logo-ServerSage-Straight-2048x577.png"|g' {} \;
+
+
+
+
+##################################################################
 # CLEANUP - Remove unused data sources and panels
 ##################################################################
 # Remove native data sources
