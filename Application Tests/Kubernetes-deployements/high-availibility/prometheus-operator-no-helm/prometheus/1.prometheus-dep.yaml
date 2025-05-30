@@ -9,57 +9,17 @@ spec:
     spec:
       containers:
       - name: mc
-        # image: minio/mc:latest
         image: minio/mc:RELEASE.2025-04-16T18-13-26Z
         command:
         - /bin/sh
         - -c
         - |
-          mc config host add myminio http://minio-service.minio.svc.cluster.local:9000  minio-admin minio@dm11 && \
+          mc config host add myminio http://minio.database.svc.cluster.local:9000  minio minio123 && \
           mc mb --ignore-existing myminio/thanos
       restartPolicy: OnFailure
+
 ---
-# Prometheus instance (CRD)
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  name: prometheus
-  namespace: serversage
-spec:
-  replicas: 2  # HA setup with 2 replicas of prometheus is recomanded
-  securityContext:
-    fsGroup: 1000
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-  serviceAccountName: prometheus
-  serviceMonitorSelector: {}
-  podMonitorSelector: {}
-  probeSelector: {}
-  scrapeInterval: "15s"
-  evaluationInterval: "15s"
-  retention: "30d"
-  externalLabels:
-    cluster: ha-cluster
-  thanos:
-    baseImage: quay.io/thanos/thanos
-    version: v0.32.0
-    objectStorageConfig:
-      key: objstore.yaml
-      name: thanos-objstore-config
-  storage:
-    volumeClaimTemplate:
-      spec:
-        # storageClassName: standard
-        storageClassName: prometheus-storage
-        resources:
-          requests:
-            storage: 400Mi
-        selector:
-          matchLabels:
-            pv-name: prometheus-db-prometheus-0
----
-# Thanos Configuration
+# Thanos Configuration Secret
 apiVersion: v1
 kind: Secret
 metadata:
@@ -71,14 +31,52 @@ stringData:
     type: S3
     config:
       bucket: thanos
-      endpoint: minio-service.minio.svc.cluster.local:9000
-      access_key: minio-admin
-      secret_key: minio@dm11
+      endpoint: minio.database.svc.cluster.local:9000
+      access_key: minio
+      secret_key: minio123
       insecure: true
       signature_version2: false
 
 ---
-# Install Prometheus Operator CRDs
+# Prometheus instance (CRD) - Production HA Setup
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: serversage
+spec:
+  replicas: 1  # HA setup with 2 replicas for production
+  serviceAccountName: prometheus
+  serviceMonitorSelector: {}
+  podMonitorSelector: {}
+  probeSelector: {}
+  scrapeInterval: "15s"
+  evaluationInterval: "15s"
+  retention: "30d"
+  externalLabels:
+    cluster: ha-cluster
+  securityContext:
+    # fsGroup: 2000
+    runAsUser: 1000
+    # runAsGroup: 2000
+    # runAsNonRoot: true
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: prometheus-storage
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+  thanos:
+    baseImage: quay.io/thanos/thanos
+    version: v0.38.0
+    objectStorageConfig:
+      key: objstore.yaml
+      name: thanos-objstore-config
+
+---
+# Prometheus Operator Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -107,6 +105,7 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+
 ---
 # Prometheus Operator Service Account
 apiVersion: v1
@@ -120,7 +119,6 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  namespace: serversage
   name: prometheus-operator
 rules:
 - apiGroups: ["monitoring.coreos.com"]
@@ -169,7 +167,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  namespace: serversage
   name: prometheus-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -230,7 +227,7 @@ subjects:
   namespace: serversage
 
 ---
-# Node Exporter Deployment
+# Node Exporter DaemonSet
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -296,14 +293,14 @@ spec:
           path: /
 
 ---
-# Thanos Querier
+# Thanos Querier Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: thanos-querier
   namespace: serversage
 spec:
-  replicas: 2
+  replicas: 1  # HA setup for production
   selector:
     matchLabels:
       app: thanos-querier
@@ -314,29 +311,48 @@ spec:
     spec:
       containers:
       - name: thanos
-        image: quay.io/thanos/thanos:v0.32.0
+        image: quay.io/thanos/thanos:v0.38.0
         args:
         - query
         - --http-address=0.0.0.0:9090
         - --grpc-address=0.0.0.0:10901
         - --query.replica-label=prometheus_replica
         - --query.replica-label=replica
-        - --store=dnssrv+_grpc._tcp.prometheus-operated.serversage.svc.cluster.local
-        - --store=dnssrv+_grpc._tcp.thanos-store-gateway.serversage.svc.cluster.local
+        - --endpoint=prometheus-operated.serversage.svc.cluster.local:10901
+        - --endpoint=thanos-store-gateway.serversage.svc.cluster.local:10901
+        - --query.auto-downsampling
+        - --query.partial-response
         ports:
         - containerPort: 9090
           name: http
+          protocol: TCP
         - containerPort: 10901
           name: grpc
+          protocol: TCP
         livenessProbe:
           httpGet:
             path: /-/healthy
             port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
         readinessProbe:
           httpGet:
             path: /-/ready
             port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+
 ---
+# Thanos Store Gateway StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -354,22 +370,22 @@ spec:
         app: thanos-store-gateway
     spec:
       securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
+        runAsUser: 0
       containers:
       - name: thanos
-        image: quay.io/thanos/thanos:v0.32.0
+        image: quay.io/thanos/thanos:v0.38.0
         args:
         - store
+        - --log.level=info
+        - --data-dir=/var/thanos/store
         - --grpc-address=0.0.0.0:10901
         - --http-address=0.0.0.0:10902
-        - --data-dir=/var/thanos/store
         - --objstore.config-file=/etc/thanos/objstore.yaml
-        # Memory optimization flags:
-        - --store.index-header-posting-offsets-in-mem-sampling=128 # Increased sampling
-        - --store.enable-index-header-lazy-reader # Enable lazy loading
-        - --store.enable-lazy-expanded-postings # Lazily expand postings
+        - --store.index-header-posting-offsets-in-mem-sampling=128
+        - --store.enable-index-header-lazy-reader
+        - --sync-block-duration=10m
+        - --chunk-pool-size=6GB
+        - --index-cache-size=2GB
         ports:
         - containerPort: 10901
           name: grpc
@@ -384,16 +400,20 @@ spec:
           httpGet:
             path: /-/healthy
             port: http
+          initialDelaySeconds: 30
+          periodSeconds: 15
         readinessProbe:
           httpGet:
             path: /-/ready
             port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
         resources:
           requests:
-            memory: "2Gi" # Start with a reasonable request
+            memory: "3Gi"
             cpu: "500m"
           limits:
-            memory: "6Gi" # Set an upper limit, adjust based on observation.  Important to prevent OOM
+            memory: "8Gi"
             cpu: "2000m"
       volumes:
       - name: config
@@ -402,8 +422,29 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: thanos-store-gateway-data
+
 ---
-# Thanos Store Service
+# Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-querier
+  namespace: serversage
+spec:
+  selector:
+    app: thanos-querier
+  ports:
+  - name: http
+    protocol: TCP
+    port: 9090
+    targetPort: 9090
+  - name: grpc
+    protocol: TCP
+    port: 10901
+    targetPort: 10901
+  type: ClusterIP
+
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -420,8 +461,8 @@ spec:
     targetPort: 10902
   selector:
     app: thanos-store-gateway
+
 ---
-# Node Exporter Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -436,8 +477,8 @@ spec:
     targetPort: metrics
   selector:
     app.kubernetes.io/name: node-exporter
+
 ---
-# Prometheus Service
 apiVersion: v1
 kind: Service
 metadata:
@@ -455,21 +496,3 @@ spec:
     targetPort: 10901
   selector:
     app.kubernetes.io/name: prometheus
----
-# Network Services
-apiVersion: v1
-kind: Service
-metadata:
-  name: thanos-querier
-  namespace: serversage
-spec:
-  ports:
-  - name: http      # give nodePort for this not in prometheus-operatored service
-    port: 9090      
-    targetPort: 9090
-  - name: grpc
-    port: 10901
-    targetPort: 10901
-  selector:
-    app: thanos-querier
----
