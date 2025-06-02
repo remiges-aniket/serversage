@@ -24,6 +24,13 @@ spec:
             value: "serversage"
           - name: GF_PLUGINS_PREINSTALL
             value: "grafana-llm-app,grafana-oncall-app"
+        resources:
+          limits:
+            cpu: 250m
+            memory: 180Mi
+          requests:
+            cpu: 102m
+            memory: 180Mi
         ports:
         - containerPort: 3000
 ---
