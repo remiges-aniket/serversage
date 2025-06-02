@@ -10,6 +10,7 @@ kubectl delete -f minio-deployment.yaml
 kubectl delete -f 1.prometheus-dep.yaml
 kubectl delete -f 2.pv-pvc-prometheus.yaml
 kubectl delete -f 3.service-monitors.yaml
+kubectl delete -f 4.additional-scrap-config.yaml
 
 kubectl delete -f grafana-simple-dep.yaml
 

@@ -19,7 +19,7 @@ kubectl apply -f minio-deployment.yaml
 kubectl apply -f 1.prometheus-dep.yaml
 kubectl apply -f 2.pv-pvc-prometheus.yaml
 kubectl apply -f 3.service-monitors.yaml
-kubectl apply -f additional-scrap-config.yaml
+kubectl apply -f 4.additional-scrap-config.yaml
 
 
 echo "Thanos installed : http://localhost:30017"
