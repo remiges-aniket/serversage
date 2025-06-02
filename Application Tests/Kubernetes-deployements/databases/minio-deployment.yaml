@@ -32,6 +32,13 @@ spec:
           value: "minio123"
         - name: MINIO_PROMETHEUS_AUTH_TYPE
           value: "public"
+        resources:
+          limits:
+            cpu: 250m
+            memory: 400Mi
+          requests:
+            cpu: 102m
+            memory: 180Mi
         ports:
         - containerPort: 9000
           name: http
