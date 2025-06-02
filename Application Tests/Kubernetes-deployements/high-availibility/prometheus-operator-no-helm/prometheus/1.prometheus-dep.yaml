@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: create-thanos-bucket
-  namespace: serversage
+  namespace: prometheus
 spec:
   template:
     spec:
@@ -24,7 +24,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: thanos-objstore-config
-  namespace: serversage
+  namespace: prometheus
 type: Opaque
 stringData:
   objstore.yaml: |
@@ -43,21 +43,26 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   name: prometheus
-  namespace: serversage
+  namespace: prometheus
 spec:
   replicas: 1  # HA setup with 2 replicas for production
+  baseImage: quay.io/prometheus/prometheus:v2.48.1
   serviceAccountName: prometheus
   serviceMonitorSelector: {}
   podMonitorSelector: {}
+  additionalScrapeConfigs:
+    name: additional-scrape-configs
+    key: prometheus-additional.yaml
   probeSelector: {}
   scrapeInterval: "15s"
   evaluationInterval: "15s"
-  retention: "30d"
+  retention: "1h"  #"30d"
   externalLabels:
     cluster: ha-cluster
+    prometheus_replica: $(POD_NAME)
   securityContext:
     # fsGroup: 2000
-    runAsUser: 1000
+    runAsUser: 0 #1000
     # runAsGroup: 2000
     # runAsNonRoot: true
   storage:
@@ -74,6 +79,14 @@ spec:
     objectStorageConfig:
       key: objstore.yaml
       name: thanos-objstore-config
+    listenLocal: false
+    resources:
+      requests:
+        memory: "400Mi"
+        cpu: "100m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
 
 ---
 # Prometheus Operator Deployment
@@ -81,7 +94,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-operator
-  namespace: serversage
+  namespace: prometheus
   labels:
     app.kubernetes.io/name: prometheus-operator
 spec:
@@ -112,7 +125,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus-operator
-  namespace: serversage
+  namespace: prometheus
 
 ---
 # Prometheus Operator ClusterRole
@@ -175,7 +188,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus-operator
-  namespace: serversage
+  namespace: prometheus
 
 ---
 # Prometheus Service Account
@@ -183,7 +196,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
-  namespace: serversage
+  namespace: prometheus
 
 ---
 # Prometheus ClusterRole
@@ -224,7 +237,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus
-  namespace: serversage
+  namespace: prometheus
 
 ---
 # Node Exporter DaemonSet
@@ -232,7 +245,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: node-exporter
-  namespace: serversage
+  namespace: prometheus
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
@@ -298,7 +311,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: thanos-querier
-  namespace: serversage
+  namespace: prometheus
 spec:
   replicas: 1  # HA setup for production
   selector:
@@ -317,11 +330,14 @@ spec:
         - --http-address=0.0.0.0:9090
         - --grpc-address=0.0.0.0:10901
         - --query.replica-label=prometheus_replica
-        - --query.replica-label=replica
-        - --endpoint=prometheus-operated.serversage.svc.cluster.local:10901
-        - --endpoint=thanos-store-gateway.serversage.svc.cluster.local:10901
+        - --query.replica-label=thanos_replica
+        - --endpoint=prometheus-operated.prometheus.svc.cluster.local:10901
+        - --endpoint=thanos-store-gateway.prometheus.svc.cluster.local:10901
+        # - --endpoint=dnssrv+_grpc._tcp.prometheus-operated.prometheus.svc.cluster.local:10901
+        # - --endpoint=dnssrv+_grpc._tcp.thanos-store-gateway.prometheus.svc.cluster.local:10901
         - --query.auto-downsampling
         - --query.partial-response
+        - --log.level=info
         ports:
         - containerPort: 9090
           name: http
@@ -357,7 +373,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: thanos-store-gateway
-  namespace: serversage
+  namespace: prometheus
 spec:
   replicas: 1
   serviceName: thanos-store-gateway
@@ -429,7 +445,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: thanos-querier
-  namespace: serversage
+  namespace: prometheus
 spec:
   selector:
     app: thanos-querier
@@ -438,18 +454,19 @@ spec:
     protocol: TCP
     port: 9090
     targetPort: 9090
+    nodePort: 30017
   - name: grpc
     protocol: TCP
     port: 10901
     targetPort: 10901
-  type: ClusterIP
+  type: NodePort
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: thanos-store-gateway
-  namespace: serversage
+  namespace: prometheus
 spec:
   clusterIP: None
   ports:
@@ -467,7 +484,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: node-exporter
-  namespace: serversage
+  namespace: prometheus
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
@@ -479,20 +496,22 @@ spec:
     app.kubernetes.io/name: node-exporter
 
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: prometheus-operated
-  namespace: serversage
-  labels:
-    operated-prometheus: "true"
-spec:
-  ports:
-  - name: web
-    port: 9090
-    targetPort: web
-  - name: thanos-sidecar
-    port: 10901
-    targetPort: 10901
-  selector:
-    app.kubernetes.io/name: prometheus
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: prometheus-operated
+#   namespace: prometheus
+#   labels:
+#     operated-prometheus: "true"
+# spec:
+#   type: NodePort
+#   ports:
+#   - name: web
+#     port: 9090
+#     targetPort: web
+#     nodePort: 30018
+#   - name: thanos-sidecar
+#     port: 10901
+#     targetPort: 10901
+#   selector:
+#     app.kubernetes.io/name: prometheus
