@@ -146,6 +146,10 @@ rules:
   - podmonitors
   - probes
   - prometheusrules
+  - alertmanagerconfigs
+  - prometheuses/status # <-- ADD THIS LINE
+  - alertmanagers/status # <-- ADD THIS LINE
+  - thanosrulers/status # <-- ADD THIS LINE
   verbs: ["*"]
 - apiGroups: ["apps"]
   resources:
