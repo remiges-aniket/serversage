@@ -2,6 +2,10 @@
 
 This document provides a Standard Operating Procedure (SOP) for deploying a Prometheus high-availability (HA) monitoring setup on Kubernetes, utilizing Prometheus Operator and Thanos.
 
+The `slack`and `alertmanager` defined as a external or internal alert system:
+
+![alt text](./images/prom-ha-arct.png)
+
 ## 1. Introduction 🎯
 
 This SOP guides you through the installation and configuration of a robust Prometheus monitoring solution. It includes Prometheus Operator for managing Prometheus instances, Thanos for long-term storage and global querying, Node Exporter for host metrics, and various ServiceMonitors for discovering and scraping metrics from different services.
@@ -29,11 +33,10 @@ Follow these steps to deploy the Prometheus HA setup:
 
 ### Step 1: Namespace Preparation
 
-It's good practice to deploy monitoring components within dedicated namespaces. This configuration primarily uses the `prometheus` namespace. The CRD installation script uses `serversage-db`, CRDs are generally cluster-scoped but let's create both as per files.
+It's good practice to deploy monitoring components within dedicated namespaces. This configuration primarily uses the `serversage` namespace. The CRD installation script uses `serversage`, CRDs are generally cluster-scoped but let's create both as per files.
 
 ```bash
-kubectl create namespace prometheus
-kubectl create namespace serversage-db # Used by the CRD installation script
+kubectl create namespace serversage # Used by the CRD installation script
 ```
 
 ### Step 2: Install Prometheus Custom Resource Definitions (CRDs)
@@ -55,13 +58,13 @@ The Prometheus Operator uses CRDs to manage Prometheus and related resources. Th
     echo "Step 1: Installing Prometheus CRDs directly..."
 
     # Assuming the CRD files are in a sub-directory named 'crd'
-    # The script installs CRDs into the 'serversage-db' namespace.
+    # The script installs CRDs into the 'serversage' namespace.
     # CRDs are typically cluster-scoped, but this command specifies a namespace.
     # If CRDs are truly cluster-scoped, the -n flag is ignored for those.
-    kubectl create -f ./crd/ -n serversage-db
+    kubectl create -f ./crd/ -n serversage
 
-    echo "Done! Check the status with: kubectl get prometheuses -n serversage-db"
-    # Note: The Prometheus instance itself will be created in the 'prometheus' namespace later.
+    echo "Done! Check the status with: kubectl get prometheuses -n serversage"
+    # Note: The Prometheus instance itself will be created in the 'serversage' namespace later.
     # To check for CRDs, you can use: kubectl get crds | grep 'monitoring.coreos.com'
     ```
 
@@ -136,7 +139,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: thanos-store-gateway-data
-  namespace: prometheus # Ensure this matches the namespace of Thanos Store Gateway
+  namespace: serversage # Ensure this matches the namespace of Thanos Store Gateway
 spec:
   storageClassName: local-storage
   accessModes:
@@ -238,9 +241,9 @@ The `1.prometheus-dep.yaml` file contains definitions for the Prometheus Operato
 Apply the main deployment file:
 
 ```bash
-kubectl apply -f 1.prometheus-dep.yaml -n prometheus
+kubectl apply -f 1.prometheus-dep.yaml -n serversage
 ```
-*(The Job `create-thanos-bucket` and the Secret `thanos-objstore-config` are also in the `prometheus` namespace as per the YAML, so applying to `prometheus` namespace is correct.)*
+*(The Job `create-thanos-bucket` and the Secret `thanos-objstore-config` are also in the `serversage` namespace as per the YAML, so applying to `serversage` namespace is correct.)*
 
 A summary of `1.prometheus-dep.yaml` structure:
 ```yaml
@@ -276,7 +279,7 @@ The `4.additional-scrap-config.yaml` file defines a Secret that holds these conf
 Apply the additional scrape configuration Secret:
 
 ```bash
-kubectl apply -f 4.additional-scrap-config.yaml -n prometheus
+kubectl apply -f 4.additional-scrap-config.yaml -n serversage
 ```
 
 Content of `4.additional-scrap-config.yaml`:
@@ -287,7 +290,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: additional-scrape-configs
-  namespace: prometheus # Ensure this is the namespace where Prometheus CR is deployed
+  namespace: serversage # Ensure this is the namespace where Prometheus CR is deployed
 type: Opaque
 stringData:
   prometheus-additional.yaml: |
@@ -314,12 +317,12 @@ This secret is referenced in the Prometheus CR under `spec.additionalScrapeConfi
 Apply the ServiceMonitors:
 
 ```bash
-kubectl apply -f 3.service-monitors.yaml -n prometheus
+kubectl apply -f 3.service-monitors.yaml -n serversage
 ```
-*(ServiceMonitors should be created in the same namespace as the Prometheus CR or in namespaces that Prometheus is configured to watch, if `serviceMonitorNamespaceSelector` is used in the Prometheus CR. The current Prometheus CR has `serviceMonitorSelector: {}`, which means it will select all ServiceMonitors in its own namespace (`prometheus`)).*
+*(ServiceMonitors should be created in the same namespace as the Prometheus CR or in namespaces that Prometheus is configured to watch, if `serviceMonitorNamespaceSelector` is used in the Prometheus CR. The current Prometheus CR has `serviceMonitorSelector: {}`, which means it will select all ServiceMonitors in its own namespace (`serversage`)).*
 
 A summary of `ServiceMonitors` in `3.service-monitors.yaml`:
-* Node Exporter (in `prometheus` namespace)
+* Node Exporter (in `serversage` namespace)
 * Prometheus itself (for `operated-prometheus: "true"` label)
 * MinIO (in `database` namespace)
 * Kube State Metrics (in `kube-system` namespace)
@@ -331,7 +334,7 @@ A summary of `ServiceMonitors` in `3.service-monitors.yaml`:
 * Keycloak (in `starmfv2-qa` namespace)
 * ETCD (in `starmfv2-qa` namespace)
 
-You may need to adjust the `namespaceSelector` or deploy these ServiceMonitors to the respective namespaces if your Prometheus Operator isn't configured to watch all namespaces for ServiceMonitors. However, the Prometheus CR has `serviceMonitorSelector: {}` which usually means it selects ServiceMonitors from its own namespace (`prometheus`). If a ServiceMonitor needs to target a service in a different namespace, it uses `namespaceSelector` within the ServiceMonitor spec itself, which is the case for MinIO, KSM, etc.
+You may need to adjust the `namespaceSelector` or deploy these ServiceMonitors to the respective namespaces if your Prometheus Operator isn't configured to watch all namespaces for ServiceMonitors. However, the Prometheus CR has `serviceMonitorSelector: {}` which usually means it selects ServiceMonitors from its own namespace (`serversage`). If a ServiceMonitor needs to target a service in a different namespace, it uses `namespaceSelector` within the ServiceMonitor spec itself, which is the case for MinIO, KSM, etc.
 
 ---
 
@@ -343,7 +346,7 @@ This section summarizes the most common areas you'll need to customize for your 
 * **Storage Paths (`hostPath`)**: Modify `path` in `PersistentVolume` definitions. (File: `2.pv-pvc-prometheus.yaml`)
 * **Storage Capacity**: Adjust `storage:` requests in PVs, PVCs, and `volumeClaimTemplate`. (Files: `1.prometheus-dep.yaml`, `2.pv-pvc-prometheus.yaml`)
 * **Resource Requests and Limits**: Adjust `cpu` and `memory` for Prometheus, Thanos components, Operator, and Exporters. (File: `1.prometheus-dep.yaml`)
-* **Namespace Adjustments**: While most components are in the `prometheus` namespace, ensure this aligns with your strategy. CRDs are installed by script to `serversage-db`.
+* **Namespace Adjustments**: While most components are in the `serversage` namespace, ensure this aligns with your strategy. CRDs are installed by script to `serversage`.
 * **Replica Counts for HA**:
     * Prometheus CR: `spec.replicas` (e.g., 2 for HA).
     * Thanos Querier: `spec.replicas` (e.g., 2 for HA).
@@ -369,7 +372,7 @@ After applying the manifests, check the status of the deployed components:
     ```
     You should see CRDs like `prometheuses.monitoring.coreos.com`, `servicemonitors.monitoring.coreos.com`, `thanosrulers.monitoring.coreos.com`, etc.
 
-2.  **Check Pods in the `prometheus` namespace**:
+2.  **Check Pods in the `serversage` namespace**:
     ```bash
     kubectl get pods -n prometheus -w
     ```
@@ -383,21 +386,21 @@ After applying the manifests, check the status of the deployed components:
 
 3.  **Check Prometheus Custom Resource instance**:
     Note: we have all CRD's required in `crd` folder.
-    The Prometheus CR instance is deployed in the `prometheus` namespace.
+    The Prometheus CR instance is deployed in the `serversage` namespace.
     ```bash
-    kubectl get prometheuses -n prometheus  # To see details and status
+    kubectl get prometheuses -n serversage  # To see details and status
     ```
 
 4.  **Check PersistentVolumeClaims (PVCs)**:
     ```bash
-    kubectl get pvc -n prometheus
+    kubectl get pvc -n serversage
     ```
     You should see PVCs like `prometheus-prometheus-db-prometheus-0` and `thanos-store-gateway-data` in `Bound` state.
 
 5.  **Check Logs**: If pods are crashing or not ready, check their logs even if they are running primarly focus on (prometheus-operator, thanos-querier):
     ```bash
-    kubectl logs -f <pod-name> -n prometheus
-    kubectl logs -f <pod-name> -c <container-name> -n prometheus # If pod has multiple containers (e.g., Prometheus pods with thanos-sidecar)
+    kubectl logs -f <pod-name> -n serversage
+    kubectl logs -f <pod-name> -c <container-name> -n serversage # If pod has multiple containers (e.g., Prometheus pods with thanos-sidecar)
     ```
 
 6.  **Access User Interfaces (UIs)**:
@@ -407,9 +410,9 @@ After applying the manifests, check the status of the deployed components:
         Alternatively, you can port-forward:
         ```bash
         # Get the Prometheus service name (it might be prometheus-operated or similar)
-        kubectl get svc -n prometheus
+        kubectl get svc -n serversage
         # Assuming the service is named 'prometheus-operated' and listens on 9090
-        kubectl port-forward svc/prometheus-operated 9090:9090 -n prometheus
+        kubectl port-forward svc/prometheus-operated 9090:9090 -n serversage
         ```
         Then access `http://localhost:9090`.
     * **Thanos Querier UI** (Recommended):
@@ -418,7 +421,7 @@ After applying the manifests, check the status of the deployed components:
         Access via `http://<your-node-ip>:30017`
         Alternatively, port-forward:
         ```bash
-        kubectl port-forward svc/thanos-querier 9090:9090 -n prometheus # Querier also uses 9090 for HTTP
+        kubectl port-forward svc/thanos-querier 9090:9090 -n serversage # Querier also uses 9090 for HTTP
         ```
         Then access `http://localhost:9090`.
 
@@ -437,4 +440,9 @@ This SOP provides a comprehensive guide to deploying your Prometheus HA setup. R
 ![alt text](<./images/Screenshot from 2025-06-03 10-38-03.png>) 
 ![alt text](<./images/Screenshot from 2025-06-03 10-38-12.png>) 
 ![alt text](<./images/Screenshot from 2025-06-03 10-38-20.png>) 
+---
+
+### The external IP isn't connecting because no application is running there. My focus is purely on verifying if that IP is being added to the target list.
+
+---
 ![alt text](<./images/Screenshot from 2025-06-03 10-38-26.png>)

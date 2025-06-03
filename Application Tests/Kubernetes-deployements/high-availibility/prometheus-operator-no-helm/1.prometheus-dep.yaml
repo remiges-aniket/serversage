@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: create-thanos-bucket
-  namespace: prometheus
+  namespace: serversage
 spec:
   template:
     spec:
@@ -24,7 +24,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: thanos-objstore-config
-  namespace: prometheus
+  namespace: serversage
 type: Opaque
 stringData:
   objstore.yaml: |
@@ -43,7 +43,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: Prometheus
 metadata:
   name: prometheus
-  namespace: prometheus
+  namespace: serversage
 spec:
   replicas: 1  # HA setup with 2 replicas for production
   baseImage: quay.io/prometheus/prometheus:v2.48.1
@@ -94,7 +94,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-operator
-  namespace: prometheus
+  namespace: serversage
   labels:
     app.kubernetes.io/name: prometheus-operator
 spec:
@@ -125,7 +125,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus-operator
-  namespace: prometheus
+  namespace: serversage
 
 ---
 # Prometheus Operator ClusterRole
@@ -146,6 +146,10 @@ rules:
   - podmonitors
   - probes
   - prometheusrules
+  - alertmanagerconfigs
+  - prometheuses/status # <-- ADD THIS LINE
+  - alertmanagers/status # <-- ADD THIS LINE
+  - thanosrulers/status # <-- ADD THIS LINE
   verbs: ["*"]
 - apiGroups: ["apps"]
   resources:
@@ -188,7 +192,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus-operator
-  namespace: prometheus
+  namespace: serversage
 
 ---
 # Prometheus Service Account
@@ -196,7 +200,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: prometheus
-  namespace: prometheus
+  namespace: serversage
 
 ---
 # Prometheus ClusterRole
@@ -237,7 +241,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: prometheus
-  namespace: prometheus
+  namespace: serversage
 
 ---
 # Node Exporter DaemonSet
@@ -245,7 +249,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: node-exporter
-  namespace: prometheus
+  namespace: serversage
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
@@ -311,7 +315,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: thanos-querier
-  namespace: prometheus
+  namespace: serversage
 spec:
   replicas: 1  # HA setup for production
   selector:
@@ -373,7 +377,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: thanos-store-gateway
-  namespace: prometheus
+  namespace: serversage
 spec:
   replicas: 1
   serviceName: thanos-store-gateway
@@ -445,7 +449,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: thanos-querier
-  namespace: prometheus
+  namespace: serversage
 spec:
   selector:
     app: thanos-querier
@@ -466,7 +470,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: thanos-store-gateway
-  namespace: prometheus
+  namespace: serversage
 spec:
   clusterIP: None
   ports:
@@ -484,7 +488,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: node-exporter
-  namespace: prometheus
+  namespace: serversage
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
@@ -500,7 +504,7 @@ spec:
 # kind: Service
 # metadata:
 #   name: prometheus-operated
-#   namespace: prometheus
+#   namespace: serversage
 #   labels:
 #     operated-prometheus: "true"
 # spec:
