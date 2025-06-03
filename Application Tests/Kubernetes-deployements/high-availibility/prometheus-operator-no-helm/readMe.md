@@ -433,3 +433,8 @@ After applying the manifests, check the status of the deployed components:
 This SOP provides a comprehensive guide to deploying your Prometheus HA setup. Remember to carefully review and customize the configurations to match your specific environment and requirements.
 
 ## Take a look at the successful deployment screenshot below.
+
+![alt text](<./images/Screenshot from 2025-06-03 10-38-03.png>) 
+![alt text](<./images/Screenshot from 2025-06-03 10-38-12.png>) 
+![alt text](<./images/Screenshot from 2025-06-03 10-38-20.png>) 
+![alt text](<./images/Screenshot from 2025-06-03 10-38-26.png>)
