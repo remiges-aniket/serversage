@@ -10,6 +10,8 @@ services:
       - "9090:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-remote-write-receiver' # Potentially useful if you eventually push metrics to it
+      - '--web.enable-lifecycle'  # Allows /-/reload endpoint for config changes
     restart: unless-stopped
 
   postgres_exporter:
@@ -21,10 +23,12 @@ services:
       DATA_SOURCE_PASS: password
       PG_EXPORTER_EXTEND_QUERY_PATH: "/opt/postgres_exporter/queries.yaml"
     volumes:
-      - ./queries.yaml:/opt/postgres_exporter/queries.yaml
+      - ./queries_01062025.yaml:/opt/postgres_exporter/queries.yaml
     ports:
       - "9187:9187"
     restart: unless-stopped
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
 
   grafana:
     image: grafana/grafana:latest
