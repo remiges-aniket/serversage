@@ -139,3 +139,25 @@ Once the OnCall engine is running and accessible (e.g., on port 8080), you need 
 * **Secret Management:** Do not hardcode sensitive information (like API keys, database passwords) directly in service files. Use environment variables, a secrets manager, or proper configuration management tools.
 
 Given the deprecation of Grafana OnCall OSS, consider if this is the right long-term solution for your needs. Grafana Cloud IRM offers a much simpler and more maintained path for on-call management.
+
+Enable plugin oncal commands as a service:
+
+```sh
+curl -X POST 'http://admin:R3m%21G3s%40Broads%21d3@localhost:3000/api/plugins/grafana-oncall-app/settings' -H "Content-Type: application/json" -d '{"enabled":true, "jsonData":{"stackId":5, "orgId":100, "onCallApiUrl":"http://engine:8080", "grafanaUrl":"http://localhost:3000"}}'
+
+
+curl -X POST 'http://admin:admin@localhost:3000/api/plugins/grafana-oncall-app/resources/plugin/install'
+
+curl -X POST 'http://admin:R3m%21G3s%40Broads%21d3@localhost:3000/api/plugins/grafana-oncall-app/resources/plugin/install'
+
+---
+
+curl -X GET 'http://admin:admin@localhost:3000/api/plugins/grafana-oncall-app/resources/plugin/status'
+
+
+curl -X GET 'http://admin:R3m%21G3s%40Broads%21d3@localhost:3000/api/plugins/grafana-oncall-app/resources/plugin/status'
+
+curl -X POST 'http://admin:R3m%21G3s%40Broads%21d3@localhost:3000/api/plugins/grafana-oncall-app/resources/plugin/sync'
+
+
+```
