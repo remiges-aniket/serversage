@@ -153,6 +153,26 @@ spec:
     interval: 30s
     scrapeTimeout: 30s
 ---
+# Jmx-exporter Metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jmx-exporter-metrics
+  namespace: prometheus
+  labels:
+    app: jmx-exporter
+spec:
+  selector:
+    matchLabels:
+      app: jmx-exporter
+  namespaceSelector:
+    matchNames:
+      - kafka
+  endpoints:
+  - port: http
+    interval: 30s
+    scrapeTimeout: 30s
+---
 #  elastic-exporter Metrics
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
