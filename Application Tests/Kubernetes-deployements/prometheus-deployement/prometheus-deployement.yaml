@@ -101,6 +101,8 @@ data:
           - targets: ['localhost:9090']
 
       - job_name: 'kafka-metrics'
+        scrape_interval: 30s
+        scrape_timeout: 30s
         static_configs:
           - targets: ['kafka-metrics.kafka.svc.cluster.local:5556','kafka-headless.kafka.svc.cluster.local:9404']
       
