@@ -19,12 +19,6 @@ data:
     cluster.initial_master_nodes: ["elasticsearch-master-0", "elasticsearch-master-1", "elasticsearch-master-2"]
     bootstrap.memory_lock: true
     
-    # Critical settings for master election
-    discovery.zen.minimum_master_nodes: 1
-    discovery.zen.fd.ping_timeout: 30s
-    discovery.zen.fd.ping_retries: 5
-    discovery.zen.publish_timeout: 60s
-    
     # Lower ping timeouts to detect node failures faster
     transport.ping_schedule: 5s
     
@@ -301,17 +295,28 @@ spec:
         app: elasticsearch
         role: master
     spec:
+      # affinity:
+      #   podAntiAffinity:
+      #     preferredDuringSchedulingIgnoredDuringExecution:
+      #     - weight: 100
+      #       podAffinityTerm:
+      #         labelSelector:
+      #           matchExpressions:
+      #           - key: role
+      #             operator: In
+      #             values:
+      #             - master
       affinity:
-        podAntiAffinity:
+        podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
             podAffinityTerm:
               labelSelector:
                 matchExpressions:
-                - key: role
+                - key: kubernetes.io/hostname
                   operator: In
                   values:
-                  - master
+                  - my-cluster-worker3
               topologyKey: kubernetes.io/hostname
       initContainers:
       - name: init-sysctl
