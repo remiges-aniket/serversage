@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kafka-ui
-  namespace: logharbour # Ensure this matches your Kafka namespace
+  namespace: kafka # Ensure this matches your Kafka namespace
   labels:
     app: kafka-ui
 spec:
@@ -17,14 +17,14 @@ spec:
     spec:
       containers:
         - name: kafka-ui
-          image: provectuslabs/kafka-ui:latest # Use the latest or a specific version
+          image: provectuslabs/kafka-ui:v0.7.2
           ports:
             - containerPort: 8080
           env:
             - name: KAFKA_CLUSTERS_0_NAME
               value: "My Kafka Cluster" # You can change this name
             - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
-              value: "kafka.logharbour.svc.cluster.local:9092" # Use your Kafka service name and port.  Adjust the namespace if needed.
+              value: "kafka-headless.kafka.svc.cluster.local:9092" # Use your Kafka service name and port.  Adjust the namespace if needed.
           livenessProbe:
             httpGet: # Changed from http to httpGet
               path: /actuator/health
@@ -42,7 +42,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka-ui-service
-  namespace: logharbour # Ensure this matches your Kafka namespace
+  namespace: kafka # Ensure this matches your Kafka namespace
   labels:
     app: kafka-ui
 spec:
