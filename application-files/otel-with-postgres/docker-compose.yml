@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    restart: unless-stopped
+
+  # postgres_exporter:
+  #   image: prometheuscommunity/postgres-exporter:latest
+  #   container_name: postgres_exporter
+  #   environment:
+  #     DATA_SOURCE_URI: "host.docker.internal:5432/postgres?sslmode=disable"
+  #     DATA_SOURCE_USER: postgres_exporter
+  #     DATA_SOURCE_PASS: password
+  #   ports:
+  #     - "9187:9187"
+  #   restart: unless-stopped
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otelcol
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    command: ["--config=/conf/otel-collector.yaml"]
+    privileged: true
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./otelcol_config.yaml:/conf/otel-collector.yaml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    restart: unless-stopped
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource"
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+
+# volumes:
+#   # postgres_data:
+#   grafana_data:

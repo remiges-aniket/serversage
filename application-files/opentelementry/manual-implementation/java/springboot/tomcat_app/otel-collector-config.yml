@@ -1,0 +1,69 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: # Enable OTLP over gRpc
+        endpoint: 0.0.0.0:4317
+      http: # Enable OTLP over HTTP
+        endpoint: 0.0.0.0:4318
+  hostmetrics:
+    scrapers:
+      cpu:
+      disk:
+      load:
+        cpu_average: true
+      filesystem:
+      memory:
+      network:
+      paging:
+      processes:
+
+processors:
+  batch:
+  resourcedetection:
+    detectors: [system]
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 300
+
+exporters:
+  otlp:
+    endpoint: otel-collector:4317
+    tls:
+      insecure: true
+  # Data sources: traces, metrics, logs
+  # NOTE: Prior to v0.86.0 use `logging` instead of `debug`
+  debug:
+    verbosity: detailed
+  # Data sources: traces
+  # otlp/jaeger:
+  #   endpoint: "http://172.19.0.4:4317"
+  #   tls:
+  #     insecure: true
+  # Data sources: metrics
+  prometheus:
+    endpoint: "otel-collector:8889"
+    # namespace: sp_server
+  # Data sources: traces, metrics
+  # otlphttp:
+  #   endpoint: https://otlp.example.com:4318
+
+extensions:
+  health_check:
+connectors:
+  spanmetrics:
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [spanmetrics, otlp, debug]
+    metrics:
+      receivers: [otlp, spanmetrics, hostmetrics]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [prometheus, otlp]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, batch]
+      exporters: [otlp]

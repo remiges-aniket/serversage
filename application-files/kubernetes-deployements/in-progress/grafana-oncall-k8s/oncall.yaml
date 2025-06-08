@@ -1,0 +1,244 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-oncall
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana-oncall
+  template:
+    metadata:
+      labels:
+        app: grafana-oncall
+    spec:
+      containers:
+        - name: oncall
+          image: grafana/oncall:v1.15.2
+          securityContext:
+            runAsUser: 1000  # Adjust as needed
+          command: ["sh", "-c", "uwsgi --ini uwsgi.ini"]
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_TYPE
+              value: "sqlite3"
+                #- name: POSTGRES_DB
+                #value: "oncall"
+                #- name: POSTGRES_USER
+                #value: "oncall"
+                #- name: POSTGRES_PASSWORD
+                #value: "oncall@123"
+                #- name: DATABASE_URL
+                #value: "postgres://oncall:oncall%40123@postgresql-service.starmfv2-postgres.svc.cluster.local:5432/oncall"
+                #- name: POSTGRES_PORT
+                #value: "5432"
+            - name: BROKER_TYPE
+              value: "redis"
+            - name: BASE_URL
+              value: "http://oncall.monitoring.svc.cluster.local:8080"
+            - name: SECRET_KEY
+              value: "my_random_secret_must_be_more_than_32_characters_long"
+            - name: FEATURE_PROMETHEUS_EXPORTER_ENABLED
+              value: "false"
+            - name: PROMETHEUS_EXPORTER_SECRET
+              value: "prometheus"
+            - name: REDIS_URI
+              value: "redis://redis-service.starmfv2-qa.svc.cluster.local:6379/0"
+            - name: DJANGO_SETTINGS_MODULE
+              value: "settings.hobby"
+            - name: CELERY_WORKER_QUEUE
+              value: "default,critical,long,slack,telegram,webhook,retry,celery,grafana"
+            - name: CELERY_WORKER_CONCURRENCY
+              value: "1"
+            - name: CELERY_WORKER_MAX_TASKS_PER_CHILD
+              value: "100"
+            - name: CELERY_WORKER_SHUTDOWN_INTERVAL
+              value: "65m"
+            - name: CELERY_WORKER_BEAT_ENABLED
+              value: "True"
+            - name: GRAFANA_API_URL
+              value: "http://grafana.prometheus.svc.cluster.local:3000"
+          volumeMounts:
+            - name: oncall-data
+              mountPath: /var/lib/oncall
+      volumes:
+        - name: oncall-data
+          persistentVolumeClaim:
+            claimName: grafana-oncall1-pvc
+      nodeSelector:
+        name: worker
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      containers:
+        - name: celery
+          image: grafana/oncall:v1.15.2
+          securityContext:
+            runAsUser: 1000  # Use non-root user instead of privileged mode
+          command:
+            - sh
+            - "-c"
+            - "ulimit -n 1048576 && celery --quiet -A engine worker --concurrency=1 --max-tasks-per-child=100 -Q default,critical,long,slack,telegram,webhook,retry,celery,grafana -l info"
+          env:
+            - name: DATABASE_TYPE
+              value: "sqlite3"
+                #- name: POSTGRES_DB
+                #value: "oncall"
+                #- name: POSTGRES_USER
+                #value: "oncall"
+                #- name: POSTGRES_PASSWORD
+                #value: "oncall@123"
+                #- name: DATABASE_URL
+                #value: "postgres://oncall:oncall%40123@postgresql-service.starmfv2-postgres.svc.cluster.local:5432/oncall"
+                # - name: POSTGRES_PORT
+                #value: "5432"
+            - name: BROKER_TYPE
+              value: "redis"
+            - name: BASE_URL
+              value: "http://oncall.monitoring.svc.cluster.local:8080"
+            - name: SECRET_KEY
+              value: "my_random_secret_must_be_more_than_32_characters_long"
+            - name: FEATURE_PROMETHEUS_EXPORTER_ENABLED
+              value: "false"
+            - name: PROMETHEUS_EXPORTER_SECRET
+              value: "prometheus"
+            - name: REDIS_URI
+              value: "redis://redis-service.starmfv2-qa.svc.cluster.local:6379/0"  # ✅ Fixed format
+            - name: DJANGO_SETTINGS_MODULE
+              value: "settings.hobby"
+            - name: CELERY_WORKER_QUEUE
+              value: "default,critical,long,slack,telegram,webhook,retry,celery,grafana"
+            - name: CELERY_WORKER_CONCURRENCY
+              value: "1"
+            - name: CELERY_WORKER_MAX_TASKS_PER_CHILD
+              value: "100"
+            - name: CELERY_WORKER_SHUTDOWN_INTERVAL
+              value: "65m"
+            - name: CELERY_WORKER_BEAT_ENABLED
+              value: "true"
+            - name: CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP
+              value: "true"
+            - name: GRAFANA_API_URL
+              value: "http://grafana.prometheus.svc.cluster.local:3000"
+          volumeMounts:
+            - name: oncall-data
+              mountPath: /var/lib/oncall
+      volumes:
+        - name: oncall-data
+          persistentVolumeClaim:
+            claimName: grafana-oncall1-pvc
+      nodeSelector:
+        name: worker
+
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: oncall-db-migration
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        app: oncall-db-migration
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: oncall-db-migration
+          image: grafana/oncall:v1.15.2
+          securityContext:
+            runAsUser: 1000
+          command: ["python", "manage.py", "migrate", "--noinput"]
+          env:
+            - name: DATABASE_TYPE
+              value: "sqlite3"
+                #- name: DATABASE_URL
+                #value: "postgres://oncall:oncall%40123@postgresql-service.starmfv2-postgres.svc.cluster.local:5432/oncall"
+                #- name: POSTGRES_DB
+                #value: "oncall"
+                #- name: POSTGRES_USER
+                #value: "oncall"
+                #- name: POSTGRES_PASSWORD
+              #value: "oncall@123"
+            - name: BROKER_TYPE
+              value: "redis"
+            - name: BASE_URL
+              value: "http://oncall.monitoring.svc.cluster.local:8080"
+            - name: SECRET_KEY
+              value: "my_random_secret_must_be_more_than_32_characters_long"
+            - name: FEATURE_PROMETHEUS_EXPORTER_ENABLED
+              value: "false"
+            - name: PROMETHEUS_EXPORTER_SECRET
+              value: "prometheus"
+            - name: REDIS_URI
+              value: "redis://redis-service.starmfv2-qa.svc.cluster.local:6379/0"
+            - name: DJANGO_SETTINGS_MODULE
+              value: "settings.hobby"
+            - name: GRAFANA_API_URL
+              value: "http://grafana.prometheus.svc.cluster.local:3000"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oncall
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana-oncall
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-oncall1-pv
+  namespace: monitoring
+spec:
+  storageClassName: standard
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/bse-data/data/monitoring/grafana-oncall"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-oncall1-pvc
+  namespace: monitoring
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: grafana-oncall1-pv

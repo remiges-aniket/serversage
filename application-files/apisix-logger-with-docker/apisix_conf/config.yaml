@@ -1,0 +1,35 @@
+deployment:
+  admin:
+    admin_key:
+      - name: "admin"
+        key: "admin123"
+        role: admin
+    allow_admin:
+      - 0.0.0.0/0   # <-- Allows all IPs (development only)
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+  etcd:
+    host:
+      - "http://etcd:2379"
+    prefix: "/apisix"
+    timeout: 30
+
+apisix:
+  node_listen: 9080
+  enable_admin: true
+
+
+routes:
+  - uri: /init
+    upstream:
+      type: roundrobin
+      nodes:
+        "spring-boot:8081": 1
+  - uri: /*
+    plugins:
+      - name: response-rewrite
+        enable: true
+        config:
+          status_code: 403
+          body: "Access Denied"

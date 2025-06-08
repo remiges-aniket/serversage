@@ -1,0 +1,27 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'keycloak_as'
+    metrics_path: '/auth/realms/master/metrics' # Correct metrics path
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['keycloak:8080']
+      
+  - job_name: 'otel'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['otel-collector:8889']
+
+  - job_name: 'keycloak_aws'
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['keycloak:8080']
+
+  - job_name: 'keycloak_asa'
+    metrics_path: '/realms/master/metrics' # Correct metrics path
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['keycloak:8080']

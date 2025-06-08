@@ -1,0 +1,64 @@
+version: '3.9'
+
+networks:
+  shared_network_NDML:
+    external: true
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      # - PROMETHEUS_SERVER_URL=http://prometheus:9090
+      # - PROMETHEUS_QUERY_NORMALIZE_CALLS=true
+      # - PROMETHEUS_QUERY_NORMALIZE_DURATION=true
+      - COLLECTOR_OTLP_ENABLED=true
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    ports:
+      # - "4317:4317"
+      - "16686:16686" # Jaeger UI
+      # - "14268:14268" # Jaeger gRPC receiver
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    ports:
+      - "9090:9090" # Prometheus UI
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource"
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: postgres
+  #   command: ["postgres", "-p", "5433"]
+  #   volumes:
+  #     - ./posts_table_create.sql:/docker-entrypoint-initdb.d/posts_table_create.sql
+  #   ports:
+  #     - "5433:5433"

@@ -1,0 +1,158 @@
+
+networks:
+  default:
+    name: serversage
+    driver: bridge
+
+services:
+  serversage:
+    depends_on:
+      - jaeger
+      - postgres
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    pid: "host"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5433"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "postgres"
+    ports:
+      - "8080:8080"
+    volumes:
+      - /proc:/host/proc
+
+  go-auto:
+    image: otel/autoinstrumentation-go
+    depends_on:
+      - serversage
+      - jaeger
+      - prometheus
+    # build:
+    #   context: ../..
+    #   dockerfile: Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+        reservations:
+          memory: 100M
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      # - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
+      # OpenTelemetry Metrics Configuration
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:9090
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      # Other Go Auto Instrumentation
+      - OTEL_GO_AUTO_TARGET_EXE=/app/main
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - CGO_ENABLED=1
+      # General OpenTelemetry Settings
+      - OTEL_SERVICE_NAME=serversage
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=serversage
+    volumes:
+      - ./otel.yaml:/etc/otel.yaml
+      - /proc:/host/proc
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # ports:
+    #   - "9123:9123"
+    # command: ["--config=./otel.yaml"]
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    volumes:
+      - "./jaeger-ui.json:/etc/jaeger/jaeger-ui.json"
+    command:
+      - "--memory.max-traces=5000"
+      - "--query.ui-config=/etc/jaeger/jaeger-ui.json"
+    environment:
+      - METRICS_STORAGE_TYPE=prometheus
+      - PROMETHEUS_SERVER_URL=http://prometheus:9090
+      - PROMETHEUS_QUERY_NORMALIZE_CALLS=true
+      - PROMETHEUS_QUERY_NORMALIZE_DURATION=true
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    ports:
+      - "16686:16686"
+      - "4317"
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    command: ["postgres", "-p", "5433"]
+    volumes:
+      - ./posts_table_create.sql:/docker-entrypoint-initdb.d/posts_table_create.sql
+    ports:
+      - "5433:5433"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yaml
+    volumes:
+      - ./prometh.yaml:/etc/prometheus/prometheus.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+        reservations:
+          memory: 100M
+    ports:
+      - "9090:9090"
+
+  # Grafana : http://localhost:3000/grafana
+  grafana:
+    image: grafana/grafana:latest
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource"
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: collector
+    deploy:
+      resources:
+        limits:
+          memory: 150M
+    command: --config /conf/otel-collector.yml
+    privileged: true
+    # ports:  // it is working without giving ports
+    #   - "4317:4317"
+    #   - "4333:4318"
+    #   - "8888" # for prometheus
+    #   - "9124" # for prometheus
+    #   - 9090 # Prometheus metrics
+    #   - "14250:14250" # Jaeger gRPC
+    #   - 14268 # Jaeger HTTP
+    #   - 16686 # Jaeger UI
+    volumes:
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./otel.yml:/conf/otel-collector.yml

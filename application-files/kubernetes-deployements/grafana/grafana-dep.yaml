@@ -1,0 +1,445 @@
+---
+# Namespace for Grafana resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+# Persistent Volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grafana-pv
+  namespace: grafana
+  labels:
+    app: grafana
+spec:
+  capacity:
+    storage: 800Mi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: "/mnt/data/grafana"
+    type: DirectoryOrCreate
+---
+# Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: grafana
+  labels:
+    app: grafana
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 800Mi
+---
+# ConfigMap for Grafana configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: grafana
+data:
+  grafana.ini: |
+    [server]
+    domain = grafana.local
+    root_url = %(protocol)s://%(domain)s/
+    serve_from_sub_path = true
+
+    [auth]
+    disable_login_form = false
+
+    [auth.anonymous]
+    enabled = true
+    org_role = Viewer
+
+    [users]
+    allow_sign_up = false
+    
+    [security]
+    admin_user = admin
+    admin_password = serversage
+
+    [dashboards]
+    default_home_dashboard_path = /etc/grafana/provisioning/dashboards/default.json
+    
+    [plugins]
+    enable_alpha = true
+    
+    [plugin.grafana-oncall-app]
+    enabled = true
+    
+    [plugin.grafana-llm-app]
+    enabled = true
+    
+    [unified_alerting]
+    enabled = true
+
+    [feature_toggles]
+    enable = dashgpt
+    dashgpt = true
+    accessControlOnCall = true # required for oncall plugin to work
+
+---
+# ConfigMap for Grafana dashboards provisioning
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provisioning
+  namespace: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /etc/grafana/provisioning/dashboards
+---
+# ConfigMap for Grafana datasources provisioning
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-provisioning
+  namespace: grafana
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://thanos-querier.monitoring.svc.cluster.local:9090
+      isDefault: true
+      editable: true
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.monitoring.svc.cluster.local:3100
+      editable: true
+    - name: OnCall
+      type: grafana-oncall-app-datasource
+      url: http://oncall.monitoring.svc.cluster.local:8080
+      access: proxy
+      editable: true
+---
+# ConfigMap for a default dashboard
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-default-dashboard
+  namespace: grafana
+data:
+  default.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "title": "Default Dashboard",
+      "uid": "default",
+      "version": 1,
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "links": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "fill": 1,
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "up",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Up Status",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
+      "schemaVersion": 22,
+      "style": "dark",
+      "tags": [],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "",
+      "refresh": "5s"
+    }
+---
+# Deployment for Grafana
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grafana
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsGroup: 472
+      initContainers:
+        - name: init-grafana-dirs
+          image: busybox:1.36
+          command: ["/bin/sh", "/scripts/init.sh"]
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: init-script
+              mountPath: /scripts
+          securityContext:
+            runAsUser: 0  # Run as root for init container only
+      containers:
+        - name: grafana
+          # image: aniketxshinde/serversage:latest
+          image: grafana/grafana:12.0.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 472
+            runAsGroup: 472
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secret
+                  key: admin-password
+            - name: GF_PATHS_PROVISIONING
+              value: /etc/grafana/provisioning
+            - name: GF_PATHS_DATA
+              value: /var/lib/grafana
+            - name: GF_PATHS_LOGS
+              value: /var/log/grafana
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-llm-app,grafana-oncall-app"
+            # - name: GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS
+            #   value: "grafana-llm-app,grafana-oncall-app"
+            - name: GF_SERVER_ENABLE_GZIP
+              value: "true"
+            - name: GF_FEATURE_TOGGLES_ENABLE
+              value: "publicDashboards,nestedFolders,correlations,publicDashboardsEmailSharing,mlExpressions"
+            - name: GF_PLUGINS_PREINSTALL
+              value: "grafana-llm-app,grafana-oncall-app"
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: grafana-configs
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards-provisioning
+              mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+              subPath: dashboards.yaml
+            - name: grafana-default-dashboards
+              mountPath: /etc/grafana/provisioning/dashboards/default.json
+              subPath: default.json
+      volumes:
+        - name: grafana-storage
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        - name: grafana-configs
+          configMap:
+            name: grafana-config
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources-provisioning
+        - name: grafana-dashboards-provisioning
+          configMap:
+            name: grafana-dashboards-provisioning
+        - name: grafana-default-dashboards
+          configMap:
+            name: grafana-default-dashboard
+        - name: init-script
+          configMap:
+            name: grafana-init-script
+            defaultMode: 0755
+---
+# Secret for Grafana credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secret
+  namespace: grafana
+type: Opaque
+data:
+  admin-user: YWRtaW4=     # admin
+  admin-password: c2VydmVyc2FnZQ==  # serversage
+---
+# Service for Grafana
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: grafana
+  labels:
+    app: grafana
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3000'
+spec:
+  selector:
+    app: grafana
+  type: NodePort
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+      nodePort: 30016
+---
+# Ingress for Grafana (if needed)
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: grafana-ingress
+#   namespace: grafana
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+#     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+# spec:
+#   rules:
+#   - host: grafana.local
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: grafana
+#             port:
+#               number: 3000

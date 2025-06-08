@@ -1,0 +1,115 @@
+# values.yaml for kube-prometheus-stack
+
+# Namespace where the stack is installed (set via Helm CLI, not here)
+# namespace: kube-prometheus-stack
+
+# Enable or disable components
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+  # Reduce resource requests/limits for node-exporter if your nodes are small
+  resources:
+    requests:
+      cpu: 50m
+      memory: 50Mi
+    limits:
+      cpu: 100m
+      memory: 100Mi
+
+grafana:
+  image:
+    repository: aniketxshinde/serversage  # Replace with your custom image repository
+    tag: latest                                  # Replace with your custom image tag
+    pullPolicy: IfNotPresent
+  enabled: true
+  adminUser: admin
+  adminPassword: prom-operator  # Change this password for production use!
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false  # Enable and configure ingress if you want external access
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 400Mi
+  persistence:
+    enabled: true  # Enable or Disable if you want to persist dashboards/configs
+    storageClassName: ""           # Use your cluster's default StorageClass or specify one
+    accessModes:
+      - ReadWriteOnce
+    size: 2Gi                    # Adjust size as needed
+
+prometheus:
+  prometheusSpec:
+    replicas: 2
+    # Storage settings - use persistent volume for production
+    thanos:
+      objectStorageConfig:
+        name: thanos-objstore-config
+        key: objstore.yml
+      version: v0.35.1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 400Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    # Retention period for metrics data
+    retention: 30d
+    # Enable serviceMonitorSelectorNilUsesHelmValues to monitor all ServiceMonitors by default
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 200m
+        memory: 400Mi
+    # Storage for alerts
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+# Prometheus Operator settings
+prometheusOperator:
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200Mi
+    limits:
+      cpu: 200m
+      memory: 400Mi
+
+# RBAC settings (usually enabled)
+rbac:
+  create: true
+
+# Service accounts
+serviceAccounts:
+  prometheus:
+    create: true
+  alertmanager:
+    create: true
+  grafana:
+    create: true
+  nodeExporter:
+    create: true
+  kubeStateMetrics:
+    create: true

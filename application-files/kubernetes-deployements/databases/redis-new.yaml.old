@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: database
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.0.15
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            memory: 200Mi
+            cpu: "0.5"
+          requests:
+            memory: 200Mi
+            cpu: "0.5"
+        volumeMounts:
+        - name: redis-log
+          mountPath: /var/log/redis
+      - name: redis-log-forwarder
+        image: busybox:latest
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - |
+          while true; do
+            tail -n 1 -F /var/log/redis/redis.log | nc 10.244.2.66 24224
+          done
+        resources:
+          limits:
+            memory: 50Mi
+            cpu: "0.1"
+          requests:
+            memory: 50Mi
+            cpu: "0.1"
+        volumeMounts:
+        - name: redis-log
+          mountPath: /var/log/redis
+      volumes:
+      - name: redis-log
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: database
+  labels:
+    app: redis
+spec:
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+  type: ClusterIP

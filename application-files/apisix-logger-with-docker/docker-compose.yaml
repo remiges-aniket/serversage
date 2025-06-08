@@ -1,0 +1,145 @@
+version: "3.8"
+
+services:
+  # Etcd for APISIX configuration storage
+  etcd:
+    image: bitnami/etcd:latest
+    container_name: etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    ports:
+      - "2379:2379"
+    networks:
+      - apisix-net
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: fluentd 
+      options:
+        tag: etcd-logs
+        fluentd-address: localhost:24224 
+        fluentd-async-connect: "true"
+        fluentd-retry-wait: 1s
+        fluentd-max-retries: 30
+
+  # web1:
+  #   image: nginx:1.19.0-alpine
+  #   restart: always
+  #   volumes:
+  #     - ./web1.conf:/etc/nginx/nginx.conf
+  #   ports:
+  #     - "9081:80/tcp"
+  #   environment:
+  #     - NGINX_PORT=80
+  #   networks:
+  #     - apisix-net
+
+  spring-boot:
+    image: aniketxshinde/serversage:0.1.2
+    ports:
+      - "8081:8081"
+    environment:
+      - TARGET_ONE_SVC=fastapi:8000
+      - TARGET_TWO_SVC=fastapi:8000
+      - SERVER_PORT=8081
+      - OTEL_SERVICE_NAME=spring-boot
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      # - OTEL_EXPORTER=otlp
+      # - OTEL_TRACES_EXPORTER=otlp
+      # - OTEL_METRICS_EXPORTER=otlp
+      # - OTEL_LOGS_EXPORTER=otlp
+    command: "java -javaagent:/opentelemetry-javaagent.jar -jar /app.jar"
+    container_name: serversage-spring-boot
+    networks:
+      - apisix-net
+
+  # APISIX instance
+  apisix:
+    image: apache/apisix:latest
+    container_name: apisix
+    depends_on:
+      - etcd
+      - spring-boot
+    volumes:
+      - ./apisix_conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    ports:
+      - "9080:9080" # APISIX HTTP port
+      - "9443:9443" # APISIX HTTPS port
+      - "9091:9091" # APISIX Admin API port
+      - "9180:9180"
+    networks:
+      - apisix-net
+
+
+  # APISIX Dashboard
+  apisix-dashboard:
+    image: apache/apisix-dashboard:latest
+    container_name: apisix-dashboard
+    depends_on:
+      - apisix
+      - etcd
+    volumes:
+      - ./dashboard_conf/conf.yaml:/usr/local/apisix-dashboard/conf/conf.yaml:ro
+    ports:
+      - "9000:9000" # Dashboard UI port
+    networks:
+      - apisix-net
+
+  # # Fluent Bit for collecting and forwarding logs
+  # fluent-bit:
+  #   image: fluent/fluent-bit:4.0
+  #   container_name: fluent-bit
+  #   # depends_on:
+  #     # - apisix
+  #     # - opensearch
+  #   volumes:
+  #     - ./fluentbit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+  #     - ./fluentbit/filter.lua:/fluent-bit/etc/filter.lua
+  #   ports:
+  #     - "24224:24224"
+  #   networks:
+  #     - apisix-net
+
+  # # Elasticsearch using Bitnami
+  # elasticsearch:
+  #   image: bitnami/elasticsearch:8.18.0
+  #   container_name: elasticsearch
+  #   environment:
+  #    # - ELASTICSEARCH_USERNAME=elastic
+  #     - ELASTICSEARCH_PASSWORD=changeme
+  #    # - discovery.type=single-node
+  #   ports:
+  #     - "9200:9200"
+  #   networks:
+  #     - apisix-net
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-u", "elastic:changeme", "-f", "http://localhost:9200"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
+
+  # OpenSearch using Bitnami
+  # opensearch:
+  #   # image: bitnami/opensearch:latest
+  #   image: opensearchproject/opensearch:2.18.0
+  #   container_name: opensearch
+  #   environment:
+  #     - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+  #     - discovery.type=single-node
+  #     - plugins.security.disabled=false # Changed this to false
+  #     - OPENSEARCH_INITIAL_ADMIN_PASSWORD=K8j#2pL9!qR7@xZ5  
+  #   ports:
+  #     - "9200:9200"
+  #     - "9600:9600"
+  #   networks:
+  #     - apisix-net
+
+networks:
+  apisix-net:
+    driver: bridge
