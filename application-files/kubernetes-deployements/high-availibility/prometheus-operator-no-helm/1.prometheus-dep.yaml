@@ -54,16 +54,17 @@ spec:
     name: additional-scrape-configs
     key: prometheus-additional.yaml
   probeSelector: {}
-  scrapeInterval: "15s"
+  scrapeInterval: "30s"
+  scrapeTimeout: "30s"
   evaluationInterval: "15s"
-  retention: "1h"  #"30d"
+  retention: "30d"
   externalLabels:
     cluster: ha-cluster
     prometheus_replica: $(POD_NAME)
   securityContext:
-    # fsGroup: 2000
-    runAsUser: 0 #1000
-    # runAsGroup: 2000
+    # fsGroup: 27
+    runAsUser: 0
+    # runAsGroup: 1001
     # runAsNonRoot: true
   storage:
     volumeClaimTemplate:
@@ -146,7 +147,7 @@ rules:
   - podmonitors
   - probes
   - prometheusrules
-  - alertmanagerconfigs
+  - alertmanagerconfigs # <-- ADD THIS LINE
   - prometheuses/status # <-- ADD THIS LINE
   - alertmanagers/status # <-- ADD THIS LINE
   - thanosrulers/status # <-- ADD THIS LINE
@@ -323,7 +324,10 @@ spec:
         app: thanos-store-gateway
     spec:
       securityContext:
+        # fsGroup: 27
         runAsUser: 0
+        # runAsGroup: 1001
+        # runAsNonRoot: true
       containers:
       - name: thanos
         image: quay.io/thanos/thanos:v0.38.0
