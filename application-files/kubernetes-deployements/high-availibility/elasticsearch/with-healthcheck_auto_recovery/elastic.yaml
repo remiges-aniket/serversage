@@ -15,6 +15,7 @@ data:
     node.data: ${NODE_DATA}
     node.ingest: ${NODE_INGEST}
     network.host: 0.0.0.0
+    reindex.remote.whitelist: ["elasticsearch.e-search.svc.cluster.local:9200", "elasticsearch.e-search.svc.cluster.local"]
     discovery.seed_hosts: ["elasticsearch-master-0.elasticsearch-master.elastic.svc.cluster.local", "elasticsearch-master-1.elasticsearch-master.elastic.svc.cluster.local", "elasticsearch-master-2.elasticsearch-master.elastic.svc.cluster.local"]
     cluster.initial_master_nodes: ["elasticsearch-master-0", "elasticsearch-master-1", "elasticsearch-master-2"]
     bootstrap.memory_lock: true

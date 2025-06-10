@@ -12,6 +12,8 @@ spec:
     image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
     args:
       - --es.uri=http://elasticsearch.database.svc.cluster.local:9200
+      - --es.all
+      - --es.indices
     ports:
       - containerPort: 9114
         protocol: TCP
