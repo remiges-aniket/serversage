@@ -12,6 +12,12 @@
   "__elements": {},
   "__requires": [
     {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
       "type": "grafana",
       "id": "grafana",
       "name": "ServerSage",
@@ -59,10 +65,24 @@
   "links": [],
   "panels": [
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 26,
+      "panels": [],
+      "title": "kafka metrics",
+      "type": "row"
+    },
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "Time this JMX scrape took, in seconds.",
       "fieldConfig": {
         "defaults": {
           "mappings": [],
@@ -77,15 +97,195 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ms"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 8,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 27,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0-pre",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "kafka_controller_kafkacontroller_lastappliedrecordlagms{job=~\"$job\", instance=~\"$instance\"}",
+          "instant": true,
+          "legendFormat": "Active Brokers",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Kafka Lag instant",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Time this JMX scrape took, in seconds.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 20,
+        "x": 4,
+        "y": 1
+      },
+      "id": 28,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0-pre",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "kafka_controller_kafkacontroller_lastappliedrecordlagms{job=~\"$job\", instance=~\"$instance\"}",
+          "legendFormat": "Active Brokers",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Kafka Lag",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 9
+      },
+      "id": 24,
+      "panels": [],
+      "title": "JMX",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "Time this JMX scrape took, in seconds.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 10
       },
       "id": 1,
       "options": {
@@ -113,13 +313,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "kafka_controller_kafkacontroller_activebrokercount{job=~\"$job\", instance=~\"$instance\"}",
+          "expr": "jmx_scrape_duration_seconds{job=~\"$job\", instance=~\"$instance\"}",
           "legendFormat": "Active Brokers",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Active Brokers",
+      "title": "JMX scrape took time",
       "type": "stat"
     },
     {
@@ -146,12 +346,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 0,
-        "y": 8
+        "h": 5,
+        "w": 3,
+        "x": 4,
+        "y": 10
       },
-      "id": 2,
+      "id": 4,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -177,13 +377,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "kafka_controller_kafkacontroller_activecontrollercount{job=~\"$job\", instance=~\"$instance\"}",
-          "legendFormat": "Active Controller",
+          "expr": "sum(jmx_scrape_error{job=~\"$job\", instance=~\"$instance\"})",
+          "legendFormat": "JMX Scrape Errors",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Active Controller",
+      "title": "JMX Scrape Errors",
       "type": "stat"
     },
     {
@@ -210,10 +410,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 8
+        "h": 5,
+        "w": 4,
+        "x": 7,
+        "y": 10
       },
       "id": 3,
       "options": {
@@ -274,12 +474,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 8
+        "h": 5,
+        "w": 3,
+        "x": 11,
+        "y": 10
       },
-      "id": 4,
+      "id": 25,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -305,14 +505,146 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(jmx_scrape_error{job=~\"$job\", instance=~\"$instance\"})",
-          "legendFormat": "JMX Scrape Errors",
+          "expr": "kafka_controller_kafkacontroller_activebrokercount{job=~\"$job\", instance=~\"$instance\"}",
+          "legendFormat": "Active Brokers",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "JMX Scrape Errors",
+      "title": "Active Brokers",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 3,
+        "x": 14,
+        "y": 10
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.6.0-pre",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "kafka_controller_kafkacontroller_activecontrollercount{job=~\"$job\", instance=~\"$instance\"}",
+          "legendFormat": "Active Controller",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Active Controller",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 5,
+        "x": 17,
+        "y": 10
+      },
+      "id": 22,
+      "options": {
+        "minVizHeight": 75,
+        "minVizWidth": 75,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
+      },
+      "pluginVersion": "11.6.0-pre",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": " (rate(kafka_controller_controllereventmanager_eventqueueprocessingtimems_99thpercentile{job=~\"$job\", instance=~\"$instance\"}[5m]))",
+          "instant": true,
+          "legendFormat": "P99 Event Queue Processing Time",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Controller Event Queue Processing Time (P99)",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -377,7 +709,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 15
       },
       "id": 5,
       "options": {
@@ -465,7 +797,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -473,7 +806,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 15
       },
       "id": 6,
       "options": {
@@ -497,7 +830,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le, job, instance) (rate(kafka_controller_controllereventmanager_eventqueueprocessingtimems_bucket{job=~\"$job\", instance=~\"$instance\"}[5m])))",
+          "expr": " (rate(kafka_controller_controllereventmanager_eventqueueprocessingtimems_count{job=~\"$job\", instance=~\"$instance\"}[5m]))",
           "legendFormat": "P99 Event Queue Processing Time",
           "range": true,
           "refId": "A"
@@ -569,7 +902,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 23
       },
       "id": 7,
       "options": {
@@ -607,6 +940,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
+      "description": "# HELP kafka_controller_controllereventmanager_eventqueueprocessingtimems_stddev Attribute exposed for management kafka.controller:name=EventQueueProcessingTimeMs,type=ControllerEventManager,attribute=StdDev\n",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -657,7 +991,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -665,9 +1000,9 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 23
       },
-      "id": 8,
+      "id": 23,
       "options": {
         "legend": {
           "calcs": [],
@@ -689,37 +1024,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "kafka_network_requestchannel_responsequeuesize_processor_0_value{job=~\"$job\", instance=~\"$instance\"}",
-          "legendFormat": "Response Queue Size ({{processor}})",
+          "expr": " (rate(kafka_controller_controllereventmanager_eventqueueprocessingtimems_stddev{job=~\"$job\", instance=~\"$instance\"}[5m]))",
+          "legendFormat": "P99 Event Queue Processing Time",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "kafka_network_requestchannel_responsequeuesize_processor_1_value{job=~\"$job\", instance=~\"$instance\"}",
-          "hide": false,
-          "legendFormat": "Response Queue Size ({{processor}})",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "editorMode": "code",
-          "expr": "kafka_network_requestchannel_responsequeuesize_processor_2_value{job=~\"$job\", instance=~\"$instance\"}",
-          "hide": false,
-          "legendFormat": "Response Queue Size ({{processor}})",
-          "range": true,
-          "refId": "C"
         }
       ],
-      "title": "Response Queue Size Per Processor",
+      "title": "Controller Event Queue Processing Time (P99)",
       "type": "timeseries"
     },
     {
@@ -785,7 +1096,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 31
       },
       "id": 9,
       "options": {
@@ -905,7 +1216,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 31
       },
       "id": 10,
       "options": {
@@ -999,9 +1310,129 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 24,
+        "w": 12,
         "x": 0,
-        "y": 40
+        "y": 39
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0-pre",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "kafka_network_requestchannel_responsequeuesize_processor_0_value{job=~\"$job\", instance=~\"$instance\"}",
+          "legendFormat": "Response Queue Size ({{processor}})",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "kafka_network_requestchannel_responsequeuesize_processor_1_value{job=~\"$job\", instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "Response Queue Size ({{processor}})",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "kafka_network_requestchannel_responsequeuesize_processor_2_value{job=~\"$job\", instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "Response Queue Size ({{processor}})",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Response Queue Size Per Processor",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 39
       },
       "id": 11,
       "options": {
@@ -1097,7 +1528,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 48
+        "y": 47
       },
       "id": 12,
       "options": {
@@ -1193,7 +1624,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 48
+        "y": 47
       },
       "id": 13,
       "options": {
@@ -1289,7 +1720,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 56
+        "y": 55
       },
       "id": 14,
       "options": {
@@ -1385,7 +1816,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 56
+        "y": 55
       },
       "id": 15,
       "options": {
@@ -1442,10 +1873,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 6,
+        "w": 4,
         "x": 0,
-        "y": 64
+        "y": 63
       },
       "id": 16,
       "options": {
@@ -1506,10 +1937,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 64
+        "h": 6,
+        "w": 4,
+        "x": 4,
+        "y": 63
       },
       "id": 17,
       "options": {
@@ -1570,10 +2001,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 64
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 63
       },
       "id": 18,
       "options": {
@@ -1672,10 +2103,10 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 72
+        "x": 12,
+        "y": 63
       },
-      "id": 19,
+      "id": 20,
       "options": {
         "legend": {
           "calcs": [],
@@ -1697,13 +2128,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(kafka_server_replicamanager_isrshrinkspersec_count{job=~\"$job\", instance=~\"$instance\"}[1m]))",
-          "legendFormat": "ISR Shrink Rate (1m)",
+          "expr": "sum(rate(kafka_server_replicamanager_isrexpandspersec_count{job=~\"$job\", instance=~\"$instance\"}[1m]))",
+          "legendFormat": "ISR Expand Rate (1m)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "ISR Shrink Rate",
+      "title": "ISR Expand Rate",
       "type": "timeseries"
     },
     {
@@ -1768,10 +2199,10 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 72
+        "x": 0,
+        "y": 69
       },
-      "id": 20,
+      "id": 19,
       "options": {
         "legend": {
           "calcs": [],
@@ -1793,13 +2224,13 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(rate(kafka_server_replicamanager_isrexpandspersec_count{job=~\"$job\", instance=~\"$instance\"}[1m]))",
-          "legendFormat": "ISR Expand Rate (1m)",
+          "expr": "sum(rate(kafka_server_replicamanager_isrshrinkspersec_count{job=~\"$job\", instance=~\"$instance\"}[1m]))",
+          "legendFormat": "ISR Shrink Rate (1m)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "ISR Expand Rate",
+      "title": "ISR Shrink Rate",
       "type": "timeseries"
     },
     {
@@ -1828,8 +2259,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 80
+        "x": 12,
+        "y": 71
       },
       "id": 21,
       "options": {
@@ -1867,7 +2298,7 @@
       "type": "stat"
     }
   ],
-  "refresh": "",
+  "refresh": "10s",
   "schemaVersion": 41,
   "tags": [
     "kafka",
@@ -1929,8 +2360,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Kafka JMX Exporter Overview",
+  "title": "kafka-jmx-metrics-dashboard",
   "uid": "kafka-jmx-overview",
-  "version": 4,
+  "version": 10,
   "weekStart": ""
 }
