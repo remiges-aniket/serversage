@@ -98,6 +98,23 @@ data:
     - pattern: kafka.(\w+)<type=(.+), name=(.+)><>(\w+)
       name: kafka_$1_$2_$3_$4
       type: GAUGE
+
+    # Generic JVM metrics
+    - pattern: java.lang<type=Memory><(.+)>(.+)
+      name: jvm_memory_$1
+      type: GAUGE
+    
+    - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionCount
+      name: jvm_gc_collection_total
+      labels:
+        collector: "$1"
+      type: COUNTER
+    
+    - pattern: java.lang<type=GarbageCollector, name=(.+)><>CollectionTime
+      name: jvm_gc_collection_time_ms
+      labels:
+        collector: "$1"
+      type: COUNTER
 ---
 apiVersion: apps/v1
 kind: StatefulSet
