@@ -7,6 +7,7 @@ metadata:
   namespace: kube-system
   labels:
     app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/instance: kube-state-metrics
 spec:
   replicas: 1
   selector:
@@ -16,6 +17,9 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: kube-state-metrics
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
     spec:
       serviceAccountName: kube-state-metrics
       containers:
