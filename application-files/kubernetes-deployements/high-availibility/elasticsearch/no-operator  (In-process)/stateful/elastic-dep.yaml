@@ -1,0 +1,228 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+  namespace: elastic
+data:
+  # While the ConfigMap is mounted, Bitnami images heavily rely on
+  # environment variables, which often override file-based settings.
+  # We'll keep this for completeness, but primarily rely on env vars.
+  elasticsearch.yml: |
+    cluster.name: "es-cluster"
+    network.host: 0.0.0.0
+
+    # Discovery and cluster formation - use simple hostnames
+    discovery.seed_hosts:
+      - "elasticsearch-0.elasticsearch:9300"
+      - "elasticsearch-1.elasticsearch:9300"
+      - "elasticsearch-2.elasticsearch:9300"
+
+    cluster.initial_master_nodes:
+      - "elasticsearch-0"
+      - "elasticsearch-1"
+      - "elasticsearch-2"
+
+    reindex.remote.whitelist: "localhost:9200,127.0.0.1:9200,elasticsearch.database.svc.cluster.local:9200,elasticsearch.e-search.svc.cluster.local:9200"
+
+    # For ES 8.x, use discovery.zen settings
+    cluster.max_voting_config_exclusions: 5
+    cluster.auto_shrink_voting_configuration: true
+
+    # Node roles - all nodes can be master/data/ingest
+    node.roles: [ master, data, ingest ]
+
+    # Security settings for Elasticsearch 8.x - controlled by env vars below for Bitnami
+    xpack.security.enabled: false
+    xpack.security.enrollment.enabled: false
+    xpack.security.http.ssl.enabled: false
+    xpack.security.transport.ssl.enabled: false
+
+    # Performance settings
+    bootstrap.memory_lock: false
+    indices.query.bool.max_clause_count: 10000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch  # Headless service for internal cluster communication
+  namespace: elastic
+spec:
+  clusterIP: None
+  ports:
+    - name: transport
+      port: 9300
+      targetPort: 9300
+    - name: http
+      port: 9200
+      targetPort: 9200
+  selector:
+    app: elasticsearch
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-client # Client service for external access
+  namespace: elastic
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+      nodePort: 30015
+  selector:
+    app: elasticsearch
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elastic
+spec:
+  serviceName: elasticsearch
+  replicas: 3
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      # Add pod anti-affinity to spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - elasticsearch
+                topologyKey: kubernetes.io/hostname
+
+      initContainers:
+        - name: fix-permissions
+          image: bitnami/minideb
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "chown -R 1001:1001 /bitnami/elasticsearch/data && sysctl -w vm.max_map_count=262144 || echo 'Cannot set vm.max_map_count, ensure it is set on host'"]
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/elasticsearch/data
+          securityContext:
+            privileged: true
+
+        # Add init container to increase ulimits
+        - name: increase-ulimit
+          image: bitnami/minideb
+          command: ["sh", "-c", "ulimit -n 65536 && ulimit -l unlimited"]
+          securityContext:
+            privileged: true
+
+      containers:
+        - name: elasticsearch
+          image: bitnami/elasticsearch:8.11.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          env:
+            # --- START BITNAMI SPECIFIC ENVIRONMENT VARIABLES ---
+
+            # Set the cluster name using Bitnami's recommended variable
+            - name: ELASTICSEARCH_CLUSTER_NAME
+              value: "es-cluster"
+
+            # List of hosts for cluster discovery (seed hosts)
+            # Use simple hostnames for Kubernetes DNS resolution
+            - name: ELASTICSEARCH_CLUSTER_HOSTS
+              value: "elasticsearch-0.elasticsearch,elasticsearch-1.elasticsearch,elasticsearch-2.elasticsearch"
+
+            # List of master-eligible hosts for initial bootstrapping
+            # If not provided, it defaults to ELASTICSEARCH_CLUSTER_HOSTS
+            - name: ELASTICSEARCH_CLUSTER_MASTER_HOSTS
+              value: "elasticsearch-0,elasticsearch-1,elasticsearch-2"
+
+            # Set node name using pod metadata
+            - name: ELASTICSEARCH_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+
+            # Explicitly set network bind address (default is 0.0.0.0 for Bitnami usually)
+            - name: ELASTICSEARCH_BIND_ADDRESS
+              value: "0.0.0.0"
+
+            # Disable security (as per your original ConfigMap and previous env var)
+            - name: ELASTICSEARCH_SECURITY_ENABLED
+              value: "no" # Bitnami often uses 'yes'/'no' or 'true'/'false' for booleans
+
+            # Increase heap size for better performance (Bitnami's ELASTICSEARCH_HEAP_SIZE sets Xms and Xmx)
+            - name: ELASTICSEARCH_HEAP_SIZE
+              value: "1g" # Corresponds to -Xms1g -Xmx1g
+
+            # Force cluster bootstrap (if needed, though ELASTICSEARCH_CLUSTER_MASTER_HOSTS should handle it)
+            # You might not strictly need ELASTICSEARCH_IS_DEDICATED_NODE="no" if roles are specified
+            # However, it doesn't hurt.
+            - name: ELASTICSEARCH_IS_DEDICATED_NODE
+              value: "no"
+
+            # --- END BITNAMI SPECIFIC ENVIRONMENT VARIABLES ---
+
+            # Removed redundant generic 'cluster.name' and 'network.host' env vars
+            # as Bitnami's specific ones are now used and take precedence.
+            # ELASTICSEARCH_SKIP_CONFIG_VALIDATION is generally not needed if using Bitnami's env vars.
+            # If you still encounter issues, you can re-add ELASTICSEARCH_SKIP_CONFIG_VALIDATION: "yes"
+
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+
+          volumeMounts:
+            - name: data
+              mountPath: /bitnami/elasticsearch/data
+            - name: elasticsearch-config-volume
+              # Mount at the default Bitnami config directory if you want its content to be picked up
+              # The Dockerfile on Docker Hub shows /opt/bitnami/elasticsearch/config
+              # However, env vars are often prioritized. Let's keep your original for now.
+              mountPath: /bitnami/elasticsearch/config/
+
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health?wait_for_status=yellow&timeout=5s
+              port: 9200
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: 9200
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 5
+
+      volumes:
+        - name: elasticsearch-config-volume
+          configMap:
+            name: elasticsearch-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-retain
+        resources:
+          requests:
+            storage: 3Gi  # Increased storage
