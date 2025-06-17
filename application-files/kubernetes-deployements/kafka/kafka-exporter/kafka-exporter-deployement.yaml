@@ -21,8 +21,8 @@ spec:
         image: private-repo:5000/kafka-exporter:latest
         imagePullPolicy: IfNotPresent
         securityContext:
-          runAsUser: 33952
-          runAsGroup: 893
+          runAsUser: nobody
+          # runAsGroup: 893
         ports:
         - containerPort: 9308
         args: ["--kafka.server=kafka.serversage-app.svc.cluster.local:9092"]
