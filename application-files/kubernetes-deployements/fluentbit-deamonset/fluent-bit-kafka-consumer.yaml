@@ -16,8 +16,6 @@ data:
         Brokers           kafka.kafka.svc.cluster.local:9092
         Topics            kubernetes-logs
         Group_Id          flb-consumer-group
-        Kafka_Consumer_Mode  partitions
-        Kafka_Initial_Offset latest
         Format            json
         Tag               kafka.logs
 
