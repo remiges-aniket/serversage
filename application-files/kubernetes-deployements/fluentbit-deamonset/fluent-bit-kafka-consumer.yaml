@@ -1,0 +1,64 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-kafka-consumer-config
+  namespace: serversage-app
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Log_Level    info
+        Parsers_File parsers.conf
+
+    [INPUT]
+        Name              kafka
+        Brokers           kafka.kafka.svc.cluster.local:9092
+        Topics            kubernetes-logs
+        Group_Id          flb-consumer-group
+        Kafka_Consumer_Mode  partitions
+        Kafka_Initial_Offset latest
+        Format            json
+        Tag               kafka.logs
+
+    [OUTPUT]
+        Name            es
+        Match           kafka.logs
+        Host            elasticsearch.elasticsearch.svc.cluster.local
+        Port            9200
+        Index           kubernetes-logs
+        Replace_Dots    On
+        Suppress_Type_Name On
+        Retry_Limit     5
+  parsers.conf: |
+    [PARSER]
+        Name   json
+        Format json
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluent-bit-kafka-consumer
+  namespace: serversage-app
+  labels:
+    app: fluent-bit-kafka-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluent-bit-kafka-consumer
+  template:
+    metadata:
+      labels:
+        app: fluent-bit-kafka-consumer
+    spec:
+      containers:
+        - name: fluent-bit
+          image: cr.fluentbit.io/fluent/fluent-bit:2.2.2
+          volumeMounts:
+            - name: config
+              mountPath: /fluent-bit/etc/
+      volumes:
+        - name: config
+          configMap:
+            name: fluent-bit-kafka-consumer-config
