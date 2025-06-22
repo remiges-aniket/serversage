@@ -1,0 +1,30 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-es-connector
+  namespace: serversage-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: curl
+          image: curlimages/curl:7.85.0
+          command:
+            - sh
+            - -c
+            - |
+              curl -X POST http://kafka-connect:8083/connectors -H "Content-Type: application/json" -d '{
+                "name": "es-sink-connector",
+                "config": {
+                  "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+                  "tasks.max": "1",
+                  "topics": "kubernetes-logs",
+                  "connection.url": "http://elasticsearch.elasticsearch.svc.cluster.local:9200",
+                  "type.name": "_doc",
+                  "key.ignore": "true",
+                  "schema.ignore": "true",
+                  "name": "es-sink-connector"
+                }
+              }'
+          restartPolicy: OnFailure
