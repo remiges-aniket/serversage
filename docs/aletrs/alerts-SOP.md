@@ -82,6 +82,14 @@ The following alerts are used in ServerSage. We will use these as examples for s
       * **Summary:** Pod `{{ $labels.namespace }}/{{ $labels.pod }}` container(s) restarted
       * **Description:** Container(s) in pod `{{ $labels.pod }}` in namespace `{{ $labels.namespace }}` have restarted recently. Current restart count: `{{ $value }}`
 
+9.  **kafka lag**
+
+      * **Prom Query:** `max by (consumergroup, topic) (kafka_consumergroup_lag) > 1000`
+      * **Threshold:** `1000 < X`
+      * **Summary:** High Kafka consumer lag detected for group '{{ $labels.consumergroup }}' on topic '{{ $labels.topic }}'
+      * **Description:** The Kafka consumer group '{{ $labels.group }}' is experiencing high lag on topic '{{ $labels.topic }}' (partition {{ $labels.partition }}). Current lag is {{ $values.A }}. This indicates messages are not being processed quickly enough.
+
+
 ### 3\. Setting up Notification Endpoints (Contact Points)
 
 ServerSage uses "Contact Points" to define where alert notifications are sent.
