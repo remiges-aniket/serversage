@@ -1,174 +1,200 @@
-To deploy a centralized logging solution using Fluent Bit, Kafka, and Elasticsearch with visualization in ServerSage on Kubernetes, follow these steps. This guide assumes a basic understanding of Kubernetes concepts.
+This SOP outlines the deployment and configuration of Fluent Bit in a Kubernetes environment to collect container logs, forward them to Kafka, and then consume them from Kafka to send to Elasticsearch. Finally, it details how to configure ServerSage to visualize these logs from Elasticsearch.
 
-### Prerequisites
+## Standard Operating Procedure: Kubernetes Log Collection with Fluent Bit, Kafka, Elasticsearch, and ServerSage
 
-Before you begin, ensure you have the following:
+### 1\. Overview
 
-1.  **Kubernetes Cluster**: A running Kubernetes cluster (e.g., MiniKube, Kubeadm, GKE, EKS, AKS).
-2.  **`kubectl`**: Command-line tool for interacting with your Kubernetes cluster, configured to connect to your cluster.
-3.  **Elasticsearch, Kafka, ServerSage**: Running instances of this services needed, accessible from your network.
+This SOP describes a robust logging pipeline for Kubernetes clusters. Fluent Bit is deployed as a DaemonSet to collect logs from all nodes, send them to Kafka, from where another Fluent Bit instance (as a Deployment) consumes them and forwards them to Elasticsearch for storage and indexing. ServerSage is then used to visualize these logs.
 
-Assuming you have above all instances ready, hence assuming url's for them as follows:
-kafka : "kafka.kafka.svc.cluster.local:9092"
-elasticsearch : "elasticsearch.elasticsearch.svc.cluster.loca"
+**Pipeline Flow:**
+`Kubernetes Pod Logs -> Fluent Bit (DaemonSet) -> Kafka -> Fluent Bit (Deployment/Consumer) -> Elasticsearch -> ServerSage (Visualization)`
 
+### 2\. Prerequisites
 
-### Step-by-Step Deployment Guide
+The following components are assumed to be **pre-installed and pre-configured** in your environment:
 
-This SOP will guide you through deploying Fluent Bit as a log shipper, a Fluent Bit consumer for Kafka, and configuring it to send logs to Elasticsearch for visualization in ServerSage.
+  * **Kubernetes Cluster:** A running Kubernetes cluster (v1.18+ recommended).
+  * **kubectl:** Configured to interact with your Kubernetes cluster.
+  * **Helm (Optional but Recommended):** For easier management of Kafka and Elasticsearch if not already deployed.
+  * **Kafka Cluster:** A running and accessible Kafka cluster within your Kubernetes environment. The Fluent Bit configurations assume `kafka.kafka.svc.cluster.local:9092` as the broker address.
+  * **Elasticsearch Cluster:** A running and accessible Elasticsearch cluster. The Fluent Bit consumer configuration assumes `elasticsearch.elasticsearch.svc.cluster.local:9200` as the host and port.
+  * **ServerSage Instance:** A running and accessible ServerSage instance (v8.0+ recommended).
+      * **ServerSage User Permissions:** You must have Administrator or Editor roles in ServerSage.
 
+### 3\. Deployment of Fluent Bit Log Shipper (DaemonSet)
 
-#### 1\. Prepare Fluent Bit Manifests
+This Fluent Bit instance runs on each Kubernetes node to collect container logs and forward them to Kafka.
 
-The provided YAML files (`fluent-bit-dep.yaml` and `fluent-bit-kafka-consumer.yaml`) are used for this deployment.
+#### 3.1. Create Namespace
 
-**Review and Modify:**
-
-  * **Namespace (`serversage-app`)**:
-
-      * The provided manifests use the namespace `serversage-app`. You can change this if you prefer a different namespace. If you change it, ensure you update the `metadata.namespace` field in all resources (ConfigMap, DaemonSet, ServiceAccount, ClusterRoleBinding's `subjects` section for the ServiceAccount).
-      * Create the namespace if it doesn't exist:
-        ```bash
-        kubectl create namespace serversage-app
-        ```
-
-  * **Fluent Bit Image**:
-
-      * The `fluent-bit` DaemonSet uses `cr.fluentbit.io/fluent/fluent-bit:4.0`. This is a stable version. You can update it to a newer version if necessary.
-
-  * **Kafka Broker Address**:
-
-      * In `fluent-bit-dep.yaml` (Fluent Bit producer) and `fluent-bit-kafka-consumer.yaml` (Fluent Bit consumer), the Kafka broker address is `kafka.kafka.svc.cluster.local:9092`.
-      * **Crucial Change**: If your Kafka cluster is in a different namespace or has a different service name, you **must** update this value. The format is `[kafka-service-name].[kafka-namespace].svc.cluster.local:[port]`.
-
-  * **Elasticsearch Host and Port**:
-
-      * In `fluent-bit-kafka-consumer.yaml`, the Elasticsearch host is `elasticsearch.elasticsearch.svc.cluster.local` and the port is `9200`.
-      * **Crucial Change**: If your Elasticsearch cluster is in a different namespace or has a different service name, you **must** update this value. The format is `[elasticsearch-service-name].[elasticsearch-namespace].svc.cluster.local:[port]`.
-
-  * **Log Exclusion (Fluent Bit Producer - `fluent-bit-dep.yaml`)**:
-
-      * The `Exclude_Path` in the `[INPUT]` section for `tail` specifies paths to exclude from logging. Currently, it excludes:
-          * `/var/log/containers/fluent-bit*` (to prevent Fluent Bit from logging its own logs)
-          * Various `staging-*` backend logs.
-      * **Optional Change**: You can modify this list to include or exclude other application logs based on your needs.
-
-  * **Resource Limits (Optional but Recommended)**:
-
-      * For production environments, it's highly recommended to add `resources.limits` and `resources.requests` to the `fluent-bit` containers in both the DaemonSet and the Deployment. This ensures proper resource allocation and prevents resource exhaustion.
-
-      * Example for `fluent-bit` container in `fluent-bit-dep.yaml` (DaemonSet):
-
-        ```yaml
-              containers:
-                - name: fluent-bit
-                  image: cr.fluentbit.io/fluent/fluent-bit:4.0
-                  resources:
-                    limits:
-                      cpu: 200m
-                      memory: 200Mi
-                    requests:
-                      cpu: 100m
-                      memory: 100Mi
-        ```
-
-      * Apply similar resource limits to the `fluent-bit-kafka-consumer` deployment.
-
-  * **Elasticsearch Index Name (`kubernetes-logs`)**:
-
-      * In `fluent-bit-kafka-consumer.yaml`, the `[OUTPUT]` section for `es` specifies `Index kubernetes-logs`.
-      * **Optional Change**: You can change this index name. This is the index that will be created in Elasticsearch to store your logs.
-
-#### 4\. Deploy Fluent Bit (Log Shipper)
-
-This deploys Fluent Bit as a DaemonSet, ensuring it runs on every node to collect container logs.
+Ensure the namespace for Fluent Bit deployments exists.
 
 ```bash
-kubectl apply -f fluent-bit-dep.yaml
+kubectl create namespace serversage-app
 ```
 
-**Verification:**
-Check if the Fluent Bit pods are running:
+#### 3.2. Deploy Fluent Bit ConfigMap (fluent-bit-dep.yaml)
 
-```bash
-kubectl -n serversage-app get pods -l k8s-app=fluent-bit
-```
+This ConfigMap contains the configuration for the Fluent Bit DaemonSet. It defines input (tailing container logs), filtering (Kubernetes metadata enrichment), and output (sending to Kafka).
 
-You should see pods in a `Running` state, one for each node in your cluster (unless tainted nodes are present that Fluent Bit is not tolerating).
+1.  **Review the ConfigMap (`fluent-bit-dep.yaml` - ConfigMap section):**
 
-#### 5\. Deploy Fluent Bit Kafka Consumer
+      * **SERVICE:** Basic Fluent Bit service settings. `HTTP_Server On` enables a health endpoint.
+      * **INPUT (tail):**
+          * `Path: /var/log/containers/*.log` - Tails all container logs.
+          * `Exclude_Path`: Specifies paths to ignore. This is crucial as it excludes Fluent Bit's own logs and specific staging application logs.
+          * `Parser: docker` - Uses the 'docker' parser defined in `parsers.conf` for JSON-formatted logs.
+          * `Tag: kube.*` - Adds a tag prefix to all collected logs for filtering.
+      * **FILTER (kubernetes):**
+          * Enriches logs with Kubernetes metadata (pod name, namespace, labels, annotations).
+          * `Kube_URL`, `Kube_CA_File`, `Kube_Token_File`: Configures communication with the Kubernetes API.
+      * **OUTPUT (kafka):**
+          * `Brokers: kafka.kafka.svc.cluster.local:9092` - Target Kafka broker address. **Verify this matches your Kafka service.**
+          * `Topics: kubernetes-logs` - The Kafka topic where logs will be sent.
+      * **parsers.conf:** Defines a `docker` parser for JSON logs and a `multiline` parser.
 
-This deploys a Fluent Bit instance configured to consume messages from Kafka and send them to Elasticsearch.
+2.  **Apply the ConfigMap:**
 
-```bash
-kubectl apply -f fluent-bit-kafka-consumer.yaml
-```
+    ```bash
+    kubectl apply -f fluent-bit-dep.yaml
+    ```
 
-**Verification:**
-Check if the Fluent Bit Kafka Consumer pod is running:
+#### 3.3. Deploy Fluent Bit DaemonSet (fluent-bit-dep.yaml)
 
-```bash
-kubectl -n serversage-app get pods -l app=fluent-bit-kafka-consumer
-```
+This DaemonSet ensures that a Fluent Bit pod runs on every Kubernetes node to collect logs.
 
-You should see a pod in a `Running` state.
+1.  **Review the DaemonSet (`fluent-bit-dep.yaml` - DaemonSet section):**
 
-#### 6\. Verify Log Ingestion in Elasticsearch
+      * `image: cr.fluentbit.io/fluent/fluent-bit:2.2.2` - Specifies the Fluent Bit image.
+      * `volumeMounts` and `volumes`: Mounts host paths `/var/log` and `/var/lib/docker/containers` where container logs reside, and mounts the `fluent-bit-config` ConfigMap.
+      * `tolerations`: Allows Fluent Bit to run on control-plane/master nodes.
+      * `serviceAccountName: fluent-bit`: Specifies the service account for Kubernetes API access.
 
-Once the Fluent Bit Kafka Consumer is running, logs should start flowing into your Elasticsearch cluster.
+2.  **Apply the DaemonSet, ServiceAccount, ClusterRole, and ClusterRoleBinding:**
 
-You can verify this by querying Elasticsearch. If you have `curl` and access to your Elasticsearch cluster, you can try:
+    ```bash
+    kubectl apply -f fluent-bit-dep.yaml
+    ```
 
-```bash
-# Forward a port to your Elasticsearch service (example)
-kubectl port-forward service/elasticsearch -n elasticsearch 9200:9200 &
+    *This single command applies all resources defined in `fluent-bit-dep.yaml`: ConfigMap, DaemonSet, ServiceAccount, ClusterRole, and ClusterRoleBinding.*
 
-# Then, from your local machine, query Elasticsearch indices
-curl "localhost:9200/_cat/indices?v"
-```
+#### 3.4. Verification Steps (Log Shipper)
 
-You should see an index named `kubernetes-logs` (or whatever you configured) with a non-zero document count.
+1.  **Check Pod Status:** Verify Fluent Bit DaemonSet pods are running on all nodes.
+    ```bash
+    kubectl get pods -n serversage-app -l k8s-app=fluent-bit
+    ```
+    Expected output: All pods in `Running` status.
+2.  **Check Logs for Errors:** Inspect logs of a Fluent Bit DaemonSet pod.
+    ```bash
+    kubectl logs -f -n serversage-app <fluent-bit-daemonset-pod-name>
+    ```
+    Look for messages indicating successful log collection and connection to Kafka.
+3.  **Verify Kafka Topic Creation (Optional):** If `auto.create.topics.enable=true` on your Kafka brokers, the `kubernetes-logs` topic should be created. You can verify its existence using Kafka tools.
 
-#### 7\. Configure ServerSage for Log Visualization
+### 4\. Deployment of Fluent Bit Kafka Consumer (Deployment)
 
-1.  **Access ServerSage**: Log in to your ServerSage instance.
-2.  **Add Data Source**:
-      * Navigate to **Configuration** (gear icon on the left) -\> **Data Sources**.
-      * Click **Add data source**.
-      * Select **Elasticsearch**.
-3.  **Elasticsearch Data Source Configuration**:
-      * **Name**: Give it a descriptive name (e.g., `Kubernetes Logs`).
-      * **URLs**: Enter the URL for your Elasticsearch service. If ServerSage is in the same Kubernetes cluster, you can use the internal service name: `http://elasticsearch.elasticsearch.svc.cluster.local:9200` (adjust namespace and service name if yours are different). If ServerSage is external, use the external IP/hostname of your Elasticsearch service.
-      * **Auth**: If your Elasticsearch cluster requires authentication, configure it here.
-      * **Index name**: `kubernetes-logs` (or your chosen index name).
-      * **Time field**: `@timestamp` (this is the field Fluent Bit uses for timestamps).
-      * **Version**: Select the version of your Elasticsearch cluster.
-      * **Min time interval**: `10s` (or adjust as needed).
-      * Click **Save & Test**. You should see "Data source is working" if configured correctly.
-4.  **Create a Dashboard (Explore Logs)**:
-      * Navigate to **Explore** (compass icon on the left).
-      * Select your newly created Elasticsearch data source.
-      * In the query editor, you can start by simply selecting "Logs" or writing Lucene queries (e.g., `kubernetes.namespace_name:serversage-app`).
-      * You can then create dashboards with various panels to visualize your logs, such as:
-          * **Logs panel**: To view raw log messages.
-          * **Graph panel**: To see log volume over time.
-          * **Table panel**: To display structured log data.
+This Fluent Bit instance consumes logs from Kafka and forwards them to Elasticsearch.
 
-### Troubleshooting
+#### 4.1. Deploy Fluent Bit Kafka Consumer ConfigMap (fluent-bit-kafka-consumer.yaml)
 
-  * **Fluent Bit Pods Not Running**:
-      * Check `kubectl -n serversage-app describe pod <pod-name>` for events and error messages.
-      * Check `kubectl -n serversage-app logs <pod-name>` for Fluent Bit internal logs.
-  * **No Logs in Kafka**:
-      * Verify the `fluent-bit-dep` pods are running and their logs.
-      * Ensure the Kafka broker address in `fluent-bit.conf` is correct.
-      * Check Kafka broker logs for connection issues.
-  * **No Logs in Elasticsearch**:
-      * Verify the `fluent-bit-kafka-consumer` pod is running and its logs.
-      * Ensure the Kafka broker and Elasticsearch host/port in `fluent-bit-kafka-consumer-config` are correct.
-      * Check Elasticsearch cluster health and logs.
-  * **ServerSage Data Source Issues**:
-      * Double-check the Elasticsearch URL, index name, and time field in the ServerSage data source configuration.
-      * Ensure network connectivity between ServerSage and Elasticsearch.
+This ConfigMap contains the configuration for the Fluent Bit consumer Deployment. It defines input (reading from Kafka) and output (sending to Elasticsearch).
 
-This SOP provides a comprehensive guide for deploying a centralized logging solution using the provided Fluent Bit configurations within a Kubernetes environment. Remember to adapt the configurations to your specific cluster setup and requirements.
+1.  **Review the ConfigMap (`fluent-bit-kafka-consumer.yaml` - ConfigMap section):**
+
+      * **INPUT (kafka):**
+          * `Brokers: kafka.kafka.svc.cluster.local:9092` - Kafka broker address.
+          * `Topics: kubernetes-logs` - Topic to consume from.
+          * `Group_Id: flb-consumer-group` - Kafka consumer group ID.
+          * `Format: json` - Expects incoming messages to be JSON.
+          * `Tag: kafka.logs` - Tags consumed messages.
+      * **OUTPUT (es):**
+          * `Host: elasticsearch.elasticsearch.svc.cluster.local` - Elasticsearch host. **Verify this matches your Elasticsearch service.**
+          * `Port: 9200` - Elasticsearch port.
+          * `Index: kubernetes-logs` - The Elasticsearch index where logs will be stored.
+          * `Time_Key: @timestamp` - Specifies the field to use as the timestamp in Elasticsearch.
+          * `Replace_Dots: On` - Replaces dots in field names with underscores (e.g., `kubernetes.pod_name` becomes `kubernetes_pod_name`), which is good practice for Elasticsearch.
+
+2.  **Apply the ConfigMap:**
+
+    ```bash
+    kubectl apply -f fluent-bit-kafka-consumer.yaml
+    ```
+
+#### 4.2. Deploy Fluent Bit Kafka Consumer Deployment (fluent-bit-kafka-consumer.yaml)
+
+This Deployment runs one or more Fluent Bit pods to act as Kafka consumers.
+
+1.  **Review the Deployment (`fluent-bit-kafka-consumer.yaml` - Deployment section):**
+
+      * `replicas: 1` - You can scale this up if your log volume is high and a single consumer cannot keep up.
+      * `image: cr.fluentbit.io/fluent/fluent-bit:2.2.2` - Specifies the Fluent Bit image.
+      * `volumeMounts` and `volumes`: Mounts the `fluent-bit-kafka-consumer-config` ConfigMap.
+
+2.  **Apply the Deployment:**
+
+    ```bash
+    kubectl apply -f fluent-bit-kafka-consumer.yaml
+    ```
+
+#### 4.3. Verification Steps (Kafka Consumer)
+
+1.  **Check Pod Status:** Verify the Fluent Bit Kafka consumer pod is running.
+    ```bash
+    kubectl get pods -n serversage-app -l app=fluent-bit-kafka-consumer
+    ```
+    Expected output: Pod in `Running` status.
+2.  **Check Logs for Errors:** Inspect logs of the Fluent Bit consumer pod.
+    ```bash
+    kubectl logs -f -n serversage-app <fluent-bit-kafka-consumer-pod-name>
+    ```
+    Look for messages indicating successful connection to Kafka, consumption of messages, and successful output to Elasticsearch. Pay attention to `Trace_Output On` which will show the records being sent to ES.
+3.  **Verify Elasticsearch Index (Optional):** Access your Elasticsearch cluster (e.g., via Kibana or `curl`) to confirm that the `kubernetes-logs-*` index (or just `kubernetes-logs` if you are not using Logstash format or daily indices) is being created and receiving documents.
+
+### 5\. ServerSage Configuration for Elasticsearch Logs
+
+Now, configure ServerSage to connect to Elasticsearch and visualize the collected logs.
+
+#### 5.1. Add Elasticsearch Data Source in ServerSage
+
+1.  **Login to ServerSage:** Access your ServerSage instance via your web browser.
+2.  **Add Data Source:**
+      * Navigate to **Connections** (or **Configuration** (gear icon) \> **Data Sources** in older ServerSage versions) in the left-hand menu.
+      * Click **Add new connection** (or **Add data source**).
+      * Search for and select **Elasticsearch**.
+3.  **Configure Elasticsearch Data Source:**
+      * **Name:** `Kubernetes Logs ES` (or a descriptive name).
+      * **URLs:** Enter the URL of your Elasticsearch cluster. For a Kubernetes service, this would be `http://elasticsearch.elasticsearch.svc.cluster.local:9200`. If ServerSage is outside the cluster, use an external endpoint or NodePort/LoadBalancer service.
+      * **Auth:** If your Elasticsearch cluster requires authentication, configure it here (e.g., `Basic auth` with username/password).
+      * **Elasticsearch details:**
+          * **Index name:** `kubernetes-logs` (This must exactly match the `Index` configured in your Fluent Bit Kafka consumer output).
+          * **Time field:** `@timestamp` (This must exactly match the `Time_Key` configured in your Fluent Bit Kafka consumer output).
+          * **Version:** Select the appropriate version of your Elasticsearch cluster.
+      * (Optional) **Min time interval:** Set a value like `10s` or `1m` to guide query time ranges.
+4.  **Save & Test:** Click **Save & Test** to ensure ServerSage can successfully connect to Elasticsearch and query the specified index. You should see a "Data source is working" message.
+
+#### 5.2. Create a ServerSage Dashboard for Log Visualization
+
+1.  **Create New Dashboard:**
+      * Navigate to **Dashboards** \> **New Dashboard**.
+      * Click **Add new panel**.
+2.  **Configure Log Panel:**
+      * **Visualization:** Select the **Logs** visualization type.
+      * **Data Source:** Select the Elasticsearch data source you just created (`Kubernetes Logs ES`).
+      * **Query:** In the `LogQL` or `Elasticsearch Query` field, you can start with a simple query to see all logs, or filter them.
+          * To see all logs: Leave the query field empty.
+          * To filter by Kubernetes namespace: `kubernetes.namespace_name:serversage-app` (assuming `Replace_Dots: On` in Fluent Bit).
+          * To filter by pod name: `kubernetes.pod_name:my-app-pod-xyz`
+          * You can use Lucene query syntax (common for Elasticsearch).
+      * **Time range:** Adjust the dashboard's time range (top right corner) to view logs from the desired period (e.g., `Last 30 minutes`).
+      * (Optional) **Panel Options:** Customize column visibility, etc.
+3.  **Save Dashboard:** Click the **Save** icon at the top right, give your dashboard a name (e.g., `Kubernetes Application Logs`), and save it to a folder.
+
+#### 5.3. Verification Steps (ServerSage)
+
+1.  **Access Dashboard:** Open your newly created ServerSage dashboard.
+2.  **Verify Log Flow:** You should start seeing logs from your Kubernetes containers appearing in the Logs panel.
+3.  **Apply Filters:** Use the query field or add ServerSage variables to filter logs by `namespace`, `pod_name`, `container_name`, `severity`, etc., to confirm metadata enrichment is working correctly.
+4.  **Check for Missing Logs:** If logs are missing, revisit verification steps for Fluent Bit DaemonSet and Consumer, and check their respective logs for errors or warnings. Also, check Elasticsearch health and index status.
+
+This comprehensive SOP should guide you through setting up a robust log pipeline from Kubernetes to ServerSage via Kafka and Elasticsearch.
