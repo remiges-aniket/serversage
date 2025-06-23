@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: database
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      filelog:
+        include:
+          - /var/log/pods/*/*/*.log
+        exclude:
+          - /var/log/pods/*/otel-collector/*.log
+        start_at: beginning
+        poll_interval: 1s
+        include_file_path: true
+        include_file_name: true
+
+    processors:
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        pod_association:
+          - sources:
+              - from: connection
+              - from: resource_attribute
+                name: k8s.pod.uid
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.pod.start_time
+          labels:
+            - tag_name: app
+              key: app
+              from: pod
+          annotations:
+            - tag_name: version
+              key: version
+              from: pod
+
+      batch:
+        send_batch_size: 1000
+        timeout: 5s
+
+      memory_limiter:
+        limit_mib: 200
+        spike_limit_mib: 50
+        check_interval: 1s
+
+    exporters:
+      elasticsearch:
+        endpoints: ["http://elasticsearch.database.svc.cluster.local:9200"]
+        logs_index: "my-application-logs"
+        mapping:
+          mode: "none"
+    
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: [k8sattributes, batch, memory_limiter]
+          exporters: [elasticsearch]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector-sa
+  namespace: database
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-cluster-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes", "events"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector-sa
+    namespace: database
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-daemonset
+  namespace: database
+  labels:
+    app: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      serviceAccountName: otel-collector-sa
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:latest
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --config=/etc/otel-collector-config/otel-collector-config.yaml
+          volumeMounts:
+            - name: otel-collector-config
+              mountPath: /etc/otel-collector-config
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: varlogcontainers
+              mountPath: /var/log/containers
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+          env:
+            - name: KUBERNETES_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            runAsUser: 0
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: otel-collector-config
+          configMap:
+            name: otel-collector-config
+            items:
+              - key: otel-collector-config.yaml
+                path: otel-collector-config.yaml
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlogcontainers
+          hostPath:
+            path: /var/log/containers
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
