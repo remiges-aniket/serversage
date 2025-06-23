@@ -1,16 +1,29 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: grafana-pv
   namespace: monitoring
+  labels:
+    app: grafana
 spec:
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
   hostPath:
     path: /root/kind-data/grafana/  # will explain below how to map this to your actual local path
-  persistentVolumeReclaimPolicy: Retain
+    type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -20,6 +33,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: local-storage
   resources:
     requests:
       storage: 1Gi
@@ -61,11 +75,12 @@ spec:
         - containerPort: 3000
         volumeMounts:
         - name: grafana-storage
-          mountPath: /var/lib/grafana
+          mountPath: /kind-data/grafana/
       volumes:
       - name: grafana-storage
         persistentVolumeClaim:
           claimName: grafana-pvc
+
 ---
 apiVersion: v1
 kind: Service

@@ -1,10 +1,4 @@
 ---
-# Namespace for Grafana resources
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: monitoring
----
 # Persistent Volume
 apiVersion: v1
 kind: PersistentVolume
