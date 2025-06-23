@@ -20,14 +20,28 @@ data:
         Tag               kafka.logs
 
     [OUTPUT]
-        Name            es
-        Match           kafka.logs
-        Host            elasticsearch.elasticsearch.svc.cluster.local
-        Port            9200
-        Index           kubernetes-logs
-        Replace_Dots    On
-        Suppress_Type_Name On
-        Retry_Limit     5
+        Name                es
+        Match               kafka.logs
+        Host                elasticsearch.elasticsearch.svc.cluster.local
+        Port                9200
+        Index               kubernetes-logs
+        Log_Level           trace             # Recommended for debugging, change to info/warn for production
+        Suppress_Type_Name  On                # Replaces 'Type' key with 'TypeName' to avoid conflicts
+        TLS                 Off               # Set to On if your Elasticsearch uses HTTPS
+        TLS.Verify          Off               # Set to On if TLS is On and you want to verify the certificate
+        Buffer_Size         20MB
+        Trace_Error         On                # Use Trace_Error instead of TraceError
+        Time_Key            @timestamp        # Use Time_Key instead of timeKey
+        Replace_Dots        On
+        Retry_Limit         5
+        Generate_ID         On                # Use Generate_ID instead of GenerateId (already present but for clarity)
+        # Optional: If you need to set a custom document ID
+        # If using API key authentication
+        # Https_User        <your_api_key_id>
+        # Https_Passwd      <your_api_key_secret>
+        # If using basic authentication
+        # HTTP_User         <your_username>
+        # HTTP_Passwd       <your_password>
   parsers.conf: |
     [PARSER]
         Name   json
