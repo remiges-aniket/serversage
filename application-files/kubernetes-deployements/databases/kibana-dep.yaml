@@ -1,20 +1,19 @@
-
+---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
-  name: kibana-config
-  namespace: monitoring
-  labels:
-    component: kibana
-data:
-  elasticsearch_username: elastic
-  elasticsearch_password: bitnami
+  name: kibana-secret
+  namespace: elastic-system
+type: Opaque
+stringData:
+  ELASTICSEARCH_USERNAME: elastic
+  ELASTICSEARCH_PASSWORD: c6O562qo2U73xMReW68mM3bM
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kibana
-  namespace: monitoring
+  namespace: elastic-system
 spec:
   selector:
     matchLabels:
@@ -24,30 +23,71 @@ spec:
       labels:
         component: kibana
     spec:
+      serviceAccountName: kibana-sa
       containers:
       - name: kibana
-        # image: bitnami/kibana:7.17.21
-        image: bitnami/kibana:8.11.1
+        image: elastic/kibana:8.11.1
+        imagePullPolicy: "IfNotPresent"
         env:
-        - name: KIBANA_ELASTICSEARCH_URL
-          value: "elasticsearch.database.svc.cluster.local"
-        - name: KIBANA_ELASTICSEARCH_PORT_NUMBER
-          value: "9200"
-        # - name: KIBANA_XPACK_SECURITY_ENCRYPTIONKEY
-        #   value: "true"
-        # envFrom:
-        # - configMapRef:
-        #     name: kibana-config
+        # Use HTTPS URL for ECK-managed Elasticsearch
+        - name: ELASTICSEARCH_HOSTS
+          value: '["https://elastic-cluster-es-coordinating.elastic-system.svc.cluster.local:9200"]'
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: kibana-secret
+              key: ELASTICSEARCH_USERNAME
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kibana-secret
+              key: ELASTICSEARCH_PASSWORD
+        # SSL Configuration for connecting to ECK Elasticsearch
+        - name: ELASTICSEARCH_SSL_VERIFICATIONMODE
+          value: "certificate"
+        - name: ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES
+          value: "/usr/share/kibana/config/certs/ca.crt"
+        # Kibana server settings
+        - name: SERVER_SSL_ENABLED
+          value: "false"
+        - name: SERVER_HOST
+          value: "0.0.0.0"
+        # Remove service account token as we're using username/password
+        - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
+          value: ""
         ports:
         - containerPort: 5601
           name: http
           protocol: TCP
+        volumeMounts:
+        - name: elasticsearch-ca-certs
+          mountPath: "/usr/share/kibana/config/certs"
+          readOnly: true
+        # Add readiness and liveness probes
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /api/status
+            port: 5601
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 30
+      volumes:
+      - name: elasticsearch-ca-certs
+        secret:
+          secretName: elastic-cluster-es-ca # ECK creates this secret automatically
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: kibana
-  namespace: monitoring
+  namespace: elastic-system
   labels:
     component: kibana
 spec:
@@ -59,3 +99,8 @@ spec:
     targetPort: 5601
     nodePort: 30017
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kibana-sa
+  namespace: elastic-system
