@@ -15,7 +15,6 @@ The following components are assumed to be **pre-installed and pre-configured** 
 
   * **Kubernetes Cluster:** A running Kubernetes cluster (v1.18+ recommended).
   * **kubectl:** Configured to interact with your Kubernetes cluster.
-  * **Helm (Optional but Recommended):** For easier management of Kafka and Elasticsearch if not already deployed.
   * **Kafka Cluster:** A running and accessible Kafka cluster within your Kubernetes environment. The Fluent Bit configurations assume `kafka.kafka.svc.cluster.local:9092` as the broker address.
   * **Elasticsearch Cluster:** A running and accessible Elasticsearch cluster. The Fluent Bit consumer configuration assumes `elasticsearch.elasticsearch.svc.cluster.local:9200` as the host and port.
   * **ServerSage Instance:** A running and accessible ServerSage instance (v8.0+ recommended).
