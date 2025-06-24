@@ -47,6 +47,7 @@ metadata:
 spec:
   replicas: 1  # HA setup with 2 replicas for production
   baseImage: quay.io/prometheus/prometheus:v2.48.1
+  imagePullPolicy: IfNotPresent
   serviceAccountName: prometheus
   serviceMonitorSelector: {}
   podMonitorSelector: {}

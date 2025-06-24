@@ -19,6 +19,7 @@ kubectl delete -f grafana-simple-dep.yaml
 
 kubectl delete -f kube-metrics-server.yaml
 kubectl delete -f kube-state-metrics.yaml
+kubectl apply -f prometheus-deployement.yaml
 
 kubectl delete namespace prometheus
 kubectl delete namespace database

@@ -152,9 +152,9 @@ data:
         static_configs:
           - targets: ['localhost:9090']
 
-      - job_name: 'node-exporter-local'
+      - job_name: 'host-local-metrics'
         static_configs:
-          - targets: ['172.17.0.1:9100']
+          - targets: ['172.17.0.1:9100','172.17.0.1:8080']
 
       - job_name: 'kafka-metrics'
         scrape_interval: 30s
