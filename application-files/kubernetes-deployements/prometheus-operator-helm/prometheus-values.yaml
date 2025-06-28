@@ -1,0 +1,39 @@
+nameOverride: ""
+alertmanager:
+  enabled: false
+grafana:
+  enabled: true
+  fullnameOverride: "grafana"
+  nodeSelector:
+    kubernetes.io/os: linux
+  adminPassword: admin
+  service.type: NodePort
+  service.nodePort: 30013
+prometheusOperator:
+  fullnameOverride: "prometheus-operator"
+  enabled: true
+  nodeSelector:
+    kubernetes.io/os: linux
+kube-state-metrics:
+  fullnameOverride: "kube-state-metrics"
+  nodeSelector:
+    kubernetes.io/os: linux
+kubelet:
+  serviceMonitor:
+    enabled: true
+    interval: "15s"
+prometheus:
+  fullnameOverride: "prometheus"
+  serviceAccount:
+    create: true
+    name: "prometheus-k8s"
+  prometheusSpec:
+    nodeSelector:
+      kubernetes.io/os: linux
+    retention: "30d"  
+prometheus-node-exporter:
+  fullnameOverride: "node-exporter"
+  prometheus:
+    monitor:
+      enabled: true
+      interval: "15s"

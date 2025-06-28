@@ -1,175 +1,43 @@
-My cluster is running Kubernetes v1.32.2 on Debian 12 nodes with containerd runtime. Based on this, here is the **updated step-by-step process** to install the **kube-prometheus-stack** Helm chart on your cluster.
 
----
+-----
 
-# Updated Step-by-Step Installation of kube-prometheus-stack on Your Cluster
+# Step-by-Step Installation of kube-prometheus-stack on Your Cluster
 
----
+-----
 
-## 1. **Prerequisites Check**
+## 1\. **Prerequisites Check**
 
-- Kubernetes version: **v1.32.2** (your cluster nodes show this, which is compatible)
-- Helm installed (version 3+)
-- `kubectl` configured to access your cluster (you are already running `kubectl get nodes` successfully)
-- Namespace creation permission
+  - Kubernetes version: **v1.32.2** (your cluster nodes show this, which is compatible).
+  - Helm installed (version 3+).
+  - `kubectl` configured to access your cluster (you are already running `kubectl get nodes` successfully).
+  - Namespace creation permission.
 
----
+-----
 
-## 2. **Add Prometheus Community Helm Repository**
+## 2\. **Add Prometheus Community Helm Repository**
 
 Run these commands to add and update the Helm repo:
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
+helm search repo prometheus-community/kube-prometheus-stack --versions
 ```
 
----
+**Explanation:**
 
-## 3. **Create Namespace for Monitoring**
+  - `helm search repo prometheus-community/kube-prometheus-stack --versions` is more specific to find versions of the `kube-prometheus-stack` chart itself.
 
-Create a dedicated namespace to isolate monitoring components:
+-----
 
-```bash
-kubectl create namespace kube-prometheus-stack
-```
+## 3\. **Configure Custom Values (Optional but Recommended)**
 
----
+It's highly recommended to use a custom `values.yaml` file for production deployments. Let's create `prometheus-values.yaml` with your tailored settings.
 
-## 4. **Install kube-prometheus-stack Helm Chart**
-
-Install the chart into the namespace you created:
-
-```bash
-helm install kube-prom-stack prometheus-community/kube-prometheus-stack --namespace kube-prometheus-stack
-```
-
-Since your cluster is fresh (nodes are just a few minutes old), it might take a few minutes for all pods to start.
-
----
-
-## 5. **Verify the Installation**
-
-Check the status of all pods in the `kube-prometheus-stack` namespace:
-
-```bash
-kubectl get pods -n kube-prometheus-stack -l "release=kube-prom-stack"
-```
-
-You should see pods for Prometheus, Grafana, Alertmanager, node-exporter, and kube-state-metrics. Wait until all pods show `STATUS=Running` and `READY` is `1/1` or appropriate.
-
----
-
-## 6. **Access Grafana Dashboard**
-
-Forward the Grafana service port to your local machine:
-
-```bash
-kubectl port-forward -n kube-prometheus-stack svc/kube-prom-stack-grafana 3000:80
-```
-
-Then open your browser and visit:
-
-```
-http://localhost:3000
-```
-
-Default login credentials are usually:
-
-- Username: `admin`
-- Password: `prom-operator`
-
-(If you want to confirm or change this, you can check or override in Helm values.)
-
----
-
-## 7. **Customize Installation (Optional)**
-
-If you want to customize the installation (e.g., change resource limits, enable/disable components), create a `values.yaml` file with your desired settings.
-
-Example to disable node-exporter if you don’t want it:
+Create a file named `prometheus-values.yaml` with the following content:
 
 ```yaml
-nodeExporter:
-  enabled: false
-```
-
-Then install or upgrade with:
-
-```bash
-helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack -n kube-prometheus-stack -f values.yaml
-```
-
----
-
-## 8. **Uninstalling the Stack**
-
-To remove the stack when no longer needed:
-
-```bash
-helm uninstall kube-prom-stack -n kube-prometheus-stack
-```
-
-To clean up CRDs manually (optional):
-
-```bash
-kubectl delete crd alertmanagerconfigs.monitoring.coreos.com alertmanagers.monitoring.coreos.com podmonitors.monitoring.coreos.com probes.monitoring.coreos.com prometheusagents.monitoring.coreos.com prometheuses.monitoring.coreos.com prometheusrules.monitoring.coreos.com scrapeconfigs.monitoring.coreos.com servicemonitors.monitoring.coreos.com thanosrulers.monitoring.coreos.com
-```
-
----
-
-## 9. **Additional Notes for Your Environment**
-
-- Your cluster uses **containerd** runtime, which is fully compatible with kube-prometheus-stack.
-- Kubernetes v1.32.2 is recent and supported.
-- Debian 12 nodes are stable and suitable for production-grade monitoring.
-- If you have network policies or firewalls, ensure traffic is allowed between monitoring components.
-- You may want to monitor your cluster nodes, pods, and control plane metrics out of the box with this stack.
-
----
-
-# Summary of Commands for Your Setup
-
-```bash
-# Add Helm repo
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-
-# Create namespace
-kubectl create namespace kube-prometheus-stack
-
-# Install kube-prometheus-stack
-helm install kube-prom-stack prometheus-community/kube-prometheus-stack --namespace kube-prometheus-stack
-
-# Check pods status
-kubectl get pods -n kube-prometheus-stack -l "release=kube-prom-stack"
-
-# Port-forward Grafana to localhost
-kubectl port-forward -n kube-prometheus-stack svc/kube-prom-stack-grafana 3000:80
-
-# Open http://localhost:3000 in browser and login with admin/prom-operator
-
-# Optional: uninstall
-helm uninstall kube-prom-stack -n kube-prometheus-stack
-
-# Optional: delete CRDs
-kubectl delete crd alertmanagerconfigs.monitoring.coreos.com alertmanagers.monitoring.coreos.com podmonitors.monitoring.coreos.com probes.monitoring.coreos.com prometheusagents.monitoring.coreos.com prometheuses.monitoring.coreos.com prometheusrules.monitoring.coreos.com scrapeconfigs.monitoring.coreos.com servicemonitors.monitoring.coreos.com thanosrulers.monitoring.coreos.com
-```
-
----
-
-
-Below is a **custom `values.yaml`** tailored for your Kubernetes cluster running v1.32.2 on Debian 12 with containerd. This configuration balances resource usage and enables essential components for monitoring, with some sensible defaults and comments to guide you.
-
----
-
-## Custom `values.yaml` for kube-prometheus-stack
-
-```yaml
-# values.yaml for kube-prometheus-stack
-
-# Namespace where the stack is installed (set via Helm CLI, not here)
-# namespace: kube-prometheus-stack
+# prometheus-values.yaml for kube-prometheus-stack
 
 # Enable or disable components
 kubeStateMetrics:
@@ -188,12 +56,12 @@ nodeExporter:
 
 grafana:
   image:
-    repository: aniketxshinde/serversage  # Replace with your custom image repository
-    tag: latest                                  # Replace with your custom image tag
+    repository: aniketxshinde/serversage  # Replace with your custom image repository if needed
+    tag: latest                                  # Replace with your custom image tag if needed
     pullPolicy: IfNotPresent
   enabled: true
   adminUser: admin
-  adminPassword: prom-operator  # Change this password for production use!
+  adminPassword: prom-operator  # !! CHANGE THIS PASSWORD FOR PRODUCTION USE !!
   service:
     type: ClusterIP
   ingress:
@@ -206,14 +74,15 @@ grafana:
       cpu: 200m
       memory: 400Mi
   persistence:
-    enabled: true  # Enable or Disable if you want to persist dashboards/configs
-    storageClassName: ""           # Use your cluster's default StorageClass or specify one
+    enabled: true  # Enable persistence for Grafana data (dashboards, users, etc.)
+    # storageClassName: "your-storage-class" # Specify your cluster's StorageClass (e.g., standard, gp2). Leave empty "" for default.
     accessModes:
       - ReadWriteOnce
-    size: 10Gi                    # Adjust size as needed
+    size: 2Gi                    # Adjust size as needed
 
 prometheus:
   prometheusSpec:
+    replicas: 2 # Recommended for high availability
     # Storage settings - use persistent volume for production
     storageSpec:
       volumeClaimTemplate:
@@ -221,8 +90,12 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 10Gi
-          storageClassName: ""
+              storage: 10Gi # Adjust size based on data retention and cluster capacity
+    thanos:
+      objectStorageConfig:
+        name: thanos-objstore-config
+        key: objstore.yml
+      version: v0.35.1
     resources:
       requests:
         cpu: 200m
@@ -231,12 +104,13 @@ prometheus:
         cpu: 500m
         memory: 1Gi
     # Retention period for metrics data
-    retention: 30d
+    retention: 30d # Data retention for Prometheus
     # Enable serviceMonitorSelectorNilUsesHelmValues to monitor all ServiceMonitors by default
-    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false # Set to true to automatically select ServiceMonitors managed by Helm
 
 alertmanager:
   alertmanagerSpec:
+    replicas: 1 # You might want 2 for HA in production
     resources:
       requests:
         cpu: 100m
@@ -251,7 +125,7 @@ alertmanager:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 2Gi
+              storage: 2Gi # Adjust size as needed
 
 # Prometheus Operator settings
 prometheusOperator:
@@ -283,63 +157,172 @@ serviceAccounts:
     create: true
   kubeStateMetrics:
     create: true
-
-# Additional scrape configs or extra service monitors can be added here
-# extraScrapeConfigs: []
-# additionalServiceMonitors: []
-
-# Disable components you don't want by setting enabled: false above
-
 ```
----
-## Additional Notes
 
-- **StorageClassName:** If you have a specific StorageClass in your cluster (e.g., `standard`, `fast`, `gp2`), specify it; otherwise, leave it blank to use the default.
-- **AccessModes:** `ReadWriteOnce` is typical for block storage.
-- **PVC Size:** Adjust `size` based on your expected data retention and cluster capacity.
-- After updating `values.yaml`, upgrade your Helm release:
+**Key corrections/improvements in `prometheus-values.yaml`:**
 
-- This mounts a PVC at Grafana’s data directory (/var/lib/grafana), persisting dashboards, user data, and configuration.
+  - Corrected `prometheus.prometheusSpec.storage` to use `storageSpec.volumeClaimTemplate` for defining Prometheus PVCs, which is the correct structure for the `kube-prometheus-stack` chart.
+  - Added `prometheus.prometheusSpec.replicas: 2` for high availability of Prometheus.
+  - Explicitly mentioned changing `grafana.adminPassword` for production.
+  - Clarified `grafana.persistence.storageClassName` usage.
+  - Added `alertmanager.alertmanagerSpec.replicas: 1` as a default.
 
-- Verify PVCs are created and bound:
+-----
+
+## 4\. **Install kube-prometheus-stack Helm Chart**
+
+First, create the dedicated namespace, and then install the chart using your custom values file.
 
 ```bash
-kubectl get pvc -n kube-prometheus-stack
+kubectl create namespace monitoring
+
+# Get the latest stable version of the chart if you don't want to hardcode
+# CHART_VERSION=$(helm search repo prometheus-community/kube-prometheus-stack --versions | grep "kube-prometheus-stack" | awk '{print $2}' | head -n 1)
+# echo "Installing kube-prometheus-stack version: $CHART_VERSION"
+
+# Install the chart with your custom values
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --version 75.4.0 \
+  --namespace monitoring \
+  --create-namespace \
+  -f prometheus-values.yaml
 ```
 
+**Explanation:**
 
----
+  - The `--create-namespace` flag will create the `monitoring` namespace if it doesn't exist.
+  - Using `-f prometheus-values.yaml` ensures your custom configurations are applied.
+  - The Helm release name is chosen as `kube-prometheus-stack` for consistency. The previous `kube-prom-stack` was fine, but `kube-prometheus-stack` matches the chart name which can be less confusing.
 
-## How to Use This `values.yaml`
+Since your cluster is fresh (nodes are just a few minutes old), it might take a few minutes for all pods to start.
 
-1. Save the above content into a file named `values.yaml` in your working directory.
+-----
 
-2. Install or upgrade your Helm release with:
+## 5\. **Verify the Installation**
+
+Check the status of all pods and Persistent Volume Claims (PVCs) in the `monitoring` namespace:
 
 ```bash
-helm upgrade --install kube-prom-stack prometheus-community/kube-prometheus-stack \
-  --namespace kube-prometheus-stack --create-namespace -f values.yaml
+kubectl get pods -n monitoring
+kubectl get pvc -n monitoring
 ```
 
-3. Monitor the pods and services as usual:
+You should see pods for Prometheus, Grafana, Alertmanager, node-exporter, and kube-state-metrics. Wait until all pods show `STATUS=Running` and `READY` is `1/1` or appropriate. Ensure PVCs are `Bound`.
+
+-----
+
+## 6\. **Access Grafana Dashboard**
+
+Forward the Grafana service port to your local machine:
 
 ```bash
-kubectl get pods -n kube-prometheus-stack -l "release=kube-prom-stack"
+kubectl -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
 ```
 
----
+**Important Note:** The service name for Grafana in `kube-prometheus-stack` is typically `kube-prometheus-stack-grafana` by default (it prefixes the release name to the service name). I've updated the command accordingly.
 
-## Notes
+Then open your browser and visit:
 
-- **Passwords:** Change `grafana.adminPassword` before deploying in production.
-- **Persistence:** Persistence is disabled for Grafana by default to keep it simple; enable it if you want to save dashboards across restarts.
-- **Storage:** Prometheus and Alertmanager use persistent volumes (PVCs) with 10Gi and 2Gi respectively. Adjust sizes as per your cluster storage capacity.
-- **Resources:** Resource requests and limits are conservative but can be tuned based on your cluster node sizes.
-- **Ingress:** Disabled by default. If you want to expose Grafana externally, configure ingress or load balancer accordingly.
-- **Retention:** Prometheus retains metrics for 15 days, adjustable in `retention`.
+```
+http://localhost:3000
+```
 
----
+Default login credentials:
 
+  - Username: `admin`
+  - Password: `prom-operator` (as configured in your `prometheus-values.yaml`)
 
----
+**Remember to change this password in `prometheus-values.yaml` for production deployments\!**
 
+-----
+
+## 7\. **Customize Installation (Upgrade)**
+
+If you want to modify settings after the initial installation, edit your `prometheus-values.yaml` file and then upgrade the Helm release:
+
+```bash
+# Make your desired changes to prometheus-values.yaml
+
+helm upgrade kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  -f prometheus-values.yaml
+```
+
+**Explanation:**
+
+  - `helm upgrade` is used to apply changes to an existing release.
+  - It's good practice to always use your `prometheus-values.yaml` with `helm upgrade` to maintain a single source of truth for your configuration.
+
+-----
+
+## 8\. **Uninstalling the Stack**
+
+To remove the stack when no longer needed:
+
+```bash
+helm uninstall kube-prometheus-stack -n monitoring
+```
+
+To clean up CRDs manually (optional, but good for a full cleanup):
+
+```bash
+kubectl delete crd alertmanagerconfigs.monitoring.coreos.com alertmanagers.monitoring.coreos.com podmonitors.monitoring.coreos.com probes.monitoring.coreos.com prometheusagents.monitoring.coreos.com prometheuses.monitoring.coreos.com prometheusrules.monitoring.coreos.com scrapeconfigs.monitoring.coreos.com servicemonitors.monitoring.coreos.com thanosrulers.monitoring.coreos.com
+```
+
+-----
+
+## 9\. **Additional Notes for Your Environment**
+
+  - Your cluster uses **containerd** runtime, which is fully compatible with kube-prometheus-stack.
+  - Kubernetes v1.32.2 is recent and supported.
+  - Debian 12 nodes are stable and suitable for production-grade monitoring.
+  - If you have network policies or firewalls, ensure traffic is allowed between monitoring components.
+  - This stack provides comprehensive monitoring for your cluster nodes, pods, and control plane metrics out of the box.
+
+-----
+
+# Summary of Commands for Your Setup
+
+```bash
+# Add Helm repo
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+# (Optional) Check chart versions
+helm search repo prometheus-community/kube-prometheus-stack --versions
+
+# Create custom values file (save the content from Section 3 into prometheus-values.yaml)
+# cat <<EOF > prometheus-values.yaml
+# # ... (paste content from Section 3 here) ...
+# EOF
+
+# Create namespace
+kubectl create namespace monitoring
+
+# Install kube-prometheus-stack using your custom values file
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --version 75.4.0 \
+  --namespace monitoring \
+  --create-namespace \
+  -f prometheus-values.yaml
+
+# Check pods status
+kubectl get pods -n monitoring
+kubectl get pvc -n monitoring
+
+# Port-forward Grafana to localhost
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+
+# Open http://localhost:3000 in browser and login with admin/prom-operator (change password in production!)
+
+# Optional: Upgrade the stack after modifying prometheus-values.yaml
+# helm upgrade kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring -f prometheus-values.yaml
+
+# Optional: uninstall
+helm uninstall kube-prometheus-stack -n monitoring
+
+# Optional: delete CRDs for full cleanup
+kubectl delete crd alertmanagerconfigs.monitoring.coreos.com alertmanagers.monitoring.coreos.com podmonitors.monitoring.coreos.com probes.monitoring.coreos.com prometheusagents.monitoring.coreos.com prometheuses.monitoring.coreos.com prometheusrules.monitoring.coreos.com scrapeconfigs.monitoring.coreos.com servicemonitors.monitoring.coreos.com thanosrulers.monitoring.coreos.com
+```
+
+-----
