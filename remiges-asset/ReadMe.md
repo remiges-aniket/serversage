@@ -1,4 +1,15 @@
 
+---
+## Build ServerSage Branding image
+
+Run Below command to build the image with desire changes from `Dockerfilev12`
+
+```bash
+      docker build -t aniketxshinde/serversage:latest .
+      docker push aniketxshinde/serversage:latest
+
+```
+
 -----
 
 ## ServerSage Monitoring & Observability Documentation Hub
