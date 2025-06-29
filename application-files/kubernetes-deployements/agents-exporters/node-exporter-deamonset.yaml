@@ -19,7 +19,7 @@ spec:
       hostPID: true
       containers:
       - name: node-exporter
-        image: private-repo:5000/node-exporter:latest
+        image: quay.io/prometheus/node-exporter:v1.9.1
         args:
         - --path.procfs=/host/proc
         - --path.sysfs=/host/sys
@@ -71,6 +71,7 @@ metadata:
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
+  type: ClusterIP
   ports:
   - name: metrics
     port: 9100
@@ -97,4 +98,25 @@ spec:
 ---
 
 
-
+# scrap config for node-exporter
+    # scrape_configs:
+    #   - job_name: 'kubernetes-node-exporter'
+    #     kubernetes_sd_configs:
+    #       - role: pod
+    #     relabel_configs:
+    #       # Keep only pods from the "monitoring" namespace
+    #       - source_labels: [__meta_kubernetes_namespace]
+    #         action: keep
+    #         regex: monitoring
+    #       # Keep only pods with the correct app label for node-exporter
+    #       - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+    #         action: keep
+    #         regex: node-exporter
+    #       # Use the Kubernetes node name as the 'instance' label
+    #       - source_labels: [__meta_kubernetes_node_name]
+    #         target_label: instance
+    #       # Correctly set the scrape address to the pod IP and port 9100
+    #       # __meta_kubernetes_pod_ip gives the actual IP of the pod
+    #       - source_labels: [__meta_kubernetes_pod_ip] # Source is the pod's IP
+    #         target_label: __address__
+    #         replacement: $1:9100
