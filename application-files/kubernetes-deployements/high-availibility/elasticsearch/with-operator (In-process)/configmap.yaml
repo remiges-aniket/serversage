@@ -1,0 +1,31 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: elastic-operator
+  namespace: elastic-system
+data:
+  eck.yaml: |-
+    log-verbosity: 0
+    metrics-port: 8080
+    metrics-host: 0.0.0.0
+    container-registry: docker.elastic.co
+    max-concurrent-reconciles: 3
+    ca-cert-validity: 8760h
+    ca-cert-rotate-before: 24h
+    cert-validity: 8760h
+    cert-rotate-before: 24h
+    disable-config-watch: false
+    exposed-node-labels: [topology.kubernetes.io/.*,failure-domain.beta.kubernetes.io/.*]
+    set-default-security-context: auto-detect
+    kube-client-timeout: 60s
+    elasticsearch-client-timeout: 180s
+    disable-telemetry: false
+    distribution-channel: all-in-one
+    validate-storage-class: true
+    enable-webhook: true
+    webhook-name: elastic-webhook.k8s.elastic.co
+    webhook-port: 9443
+    operator-namespace: elastic-system
+    enable-leader-election: true
+    elasticsearch-observation-interval: 10s
+    ubi-only: false

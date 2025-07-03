@@ -1,0 +1,67 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: elastic-system
+spec:
+  version: 8.11.1
+  count: 1
+  elasticsearchRef:
+    name: elastic-cluster
+  config:
+    elasticsearch.hosts: ["https://elastic-cluster-es-http.elastic-system.svc:9200"]
+  http:
+    service:
+      spec:
+        type: NodePort
+        ports:
+        - port: 5601
+          protocol: TCP
+          targetPort: 5601
+          nodePort: 30017
+    tls:
+  podTemplate:
+    spec:
+      containers:
+      - name: kibana
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+---
+# apiVersion: kibana.k8s.elastic.co/v1
+# kind: Kibana
+# metadata:
+#   name: elastic-kibana
+#   namespace: elastic-system
+# spec:
+#   version: 8.11.1
+#   elasticsearchRef:
+#     name: elastic-cluster
+#   config:
+#     elasticsearch.hosts: ["https://elastic-cluster-es-http.elastic-system.svc:9200"]
+#   http:
+#     service:
+#       spec:
+#         type: NodePort
+#         ports:
+#         - port: 5601
+#           protocol: TCP
+#           targetPort: 5601
+#           nodePort: 30017
+#     tls:
+#   podTemplate:
+#     spec:
+#       containers:
+#       - name: kibana
+#         resources:
+#           requests:
+#             memory: "1Gi"
+#             cpu: "0.5"
+#           limits:
+#             memory: "2Gi"
+#             cpu: "1"
+---

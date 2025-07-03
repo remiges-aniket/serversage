@@ -1,72 +1,96 @@
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: elasticsearch
-  labels:
-    monitoring: prometheus
----
 apiVersion: elasticsearch.k8s.elastic.co/v1
 kind: Elasticsearch
 metadata:
-  name: elasticsearch-cluster
-  namespace:  
+  name: elastic-cluster
+  namespace: elastic-system
 spec:
-  version: 8.10.0
+  version: 8.11.1
   nodeSets:
-  - name: masters
-    count: 1
+
+  # Master Nodes
+  - name: master
+    count: 2
     config:
       node.roles: ["master"]
+      cluster.initial_master_nodes:
+        - elastic-cluster-es-master-0
+        - elastic-cluster-es-master-1
       node.store.allow_mmap: false
     podTemplate:
       spec:
+        securityContext:
+          runAsUser: 1000
+          fsGroup: 1000
+        # initContainers:
+        #   - name: elastic-permissions
+        #     image: alpine:3.19
+        #     command: ["/bin/sh", "-c"]
+        #     args: ["chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        #     volumeMounts:
+        #       - name: elasticsearch-data
+        #         mountPath: /usr/share/elasticsearch/data
         containers:
-        - name: elasticsearch
-          resources:
-            requests:
-              memory: 1Gi
-              cpu: 500m
-            limits:
-              memory: 2Gi
-              cpu: 800m
-    volumeClaimTemplates:
-    - metadata:
-        name: elasticsearch-data
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 2Gi # 20Gi
-        storageClassName: standard
+          - name: elasticsearch
+            resources:
+              requests:
+                memory: 1Gi
+                cpu: 1
+              limits:
+                memory: 2Gi
+                cpu: 3
+        volumes:
+          - name: elasticsearch-data
+            persistentVolumeClaim:
+              claimName: elasticsearch-data-elastic-cluster-es-master-$(STATEFULSET_ORDINAL)
+
+  # Data Nodes
   - name: data
     count: 2
     config:
-      node.roles: ["data", "ingest"]
+      node.roles: ["data"]
       node.store.allow_mmap: false
     podTemplate:
       spec:
+        securityContext:
+          runAsUser: 1000
+          fsGroup: 1000
+        # initContainers:
+        #   - name: elastic-permissions
+        #     image: alpine:3.19
+        #     command: ["/bin/sh", "-c"]
+        #     args: ["chown -R 1000:1000 /usr/share/elasticsearch/data"]
+        #     volumeMounts:
+        #       - name: elasticsearch-data
+        #         mountPath: /usr/share/elasticsearch/data
         containers:
-        - name: elasticsearch
-          resources:
-            requests:
-              memory: 1Gi
-              cpu: 500m
-            limits:
-              memory: 2Gi
-              cpu: 800m
-    volumeClaimTemplates:
-    - metadata:
-        name: elasticsearch-data
+          - name: elasticsearch
+            resources:
+              requests:
+                memory: 1Gi
+                cpu: 1
+              limits:
+                memory: 1Gi
+                cpu: 1
+        volumes:
+          - name: elasticsearch-data
+            persistentVolumeClaim:
+              claimName: elasticsearch-data-elastic-cluster-es-data-$(STATEFULSET_ORDINAL)
+
+  # Coordinating Nodes
+  - name: coordinating
+    count: 2
+    config:
+      node.roles: ["ingest", "remote_cluster_client"]
+    podTemplate:
       spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi # 10Gi
-        storageClassName: standard
-  http:
-    tls:
-      selfSignedCertificate:
-        disabled: false
+        containers:
+          - name: elasticsearch
+            resources:
+              requests:
+                memory: 1Gi
+                cpu: 1
+              limits:
+                memory: 1Gi
+                cpu: 1
+---

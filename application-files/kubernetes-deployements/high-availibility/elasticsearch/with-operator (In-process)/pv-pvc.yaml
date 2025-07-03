@@ -1,0 +1,120 @@
+---
+# --- Master Node PVs ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-master-0
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: elasticsearch-storage
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/elasticsearch/master-0"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-master-1
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: elasticsearch-storage
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/elasticsearch/master-1"
+
+# --- Data Node PVs ---
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-data-0
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: elasticsearch-storage
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/elasticsearch/data-0"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-data-1
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: elasticsearch-storage
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/elasticsearch/data-1"
+---
+---
+# --- Master PVCs ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-elastic-cluster-es-master-0
+  namespace: elastic-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-master-0
+  storageClassName: elasticsearch-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-elastic-cluster-es-master-1
+  namespace: elastic-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-master-1
+  storageClassName: elasticsearch-storage
+
+# --- Data PVCs ---
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-elastic-cluster-es-data-0
+  namespace: elastic-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-data-0
+  storageClassName: elasticsearch-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data-elastic-cluster-es-data-1
+  namespace: elastic-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-data-1
+  storageClassName: elasticsearch-storage
+---
