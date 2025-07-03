@@ -18,11 +18,8 @@ spec:
     spec:
       containers:
       - name: kafka-exporter
-        image: private-repo:5000/kafka-exporter:latest
+        image: danielqsj/kafka-exporter:latest
         imagePullPolicy: IfNotPresent
-        securityContext:
-          runAsUser: nobody
-          # runAsGroup: 893
         ports:
         - containerPort: 9308
         args: ["--kafka.server=kafka.serversage-app.svc.cluster.local:9092"]
