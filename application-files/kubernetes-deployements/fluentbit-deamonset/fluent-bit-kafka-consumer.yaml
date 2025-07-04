@@ -35,6 +35,19 @@ data:
         Replace_Dots        On
         Retry_Limit         5
         Generate_ID         On
+    # [OUTPUT]
+    #     Name                es
+    #     Match               kube.*
+    #     Host                elasticsearch.e-search.svc.cluster.local
+    #     Port                9200
+    #     Generate_ID         On
+    #     Retry_Limit         False
+    #     Time_Key            @timestamp
+    #     Logstash_Format     On
+    #     Logstash_Prefix     k8s-app-logs
+    #     Logstash_DateFormat %m-%Y
+    #     Suppress_Type_Name  On
+
   parsers.conf: |
     [PARSER]
         Name   json
