@@ -2,15 +2,17 @@
 -------
 Run otel demo app for demo in k8s:
 
+curl -o demo.yaml https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
 
 kubectl create --namespace otel-demo -f https://raw.githubusercontent.com/open-telemetry/opentelemetry-demo/main/kubernetes/opentelemetry-demo.yaml
 
 
 
-kubectl create --namespace otel-demo -f otel-demo-dep.yaml
+kubectl create --namespace otel-demo -f demo.yaml
+kubectl delete --namespace otel-demo -f demo.yaml
 
 
-kubectl --namespace default port-forward svc/frontend-proxy 8080:8080
+kubectl --namespace otel-demo port-forward svc/frontend-proxy 8080:8080
 
 With the frontend-proxy port-forward set up, you can access:
 
