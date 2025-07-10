@@ -86,10 +86,11 @@ scopes = openid email profile
 auth_url = http://<KEYCLOAK_DOMAIN>:<KEYCLOAK_PORT>/realms/<REALM_NAME>/protocol/openid-connect/auth
 token_url = http://<KEYCLOAK_DOMAIN>:<KEYCLOAK_PORT>/realms/<REALM_NAME>/protocol/openid-connect/token
 api_url = http://<KEYCLOAK_DOMAIN>:<KEYCLOAK_PORT>/realms/<REALM_NAME>/protocol/openid-connect/userinfo
-login_attribute_path = preferred_username
+sign_out_redirect_url_ = https://<KEYCLOAK_DOMAIN>:<KEYCLOAK_PORT>/realms/broadside/protocol/openid-connect/logout?post_logout_redirect_uri=https://<mydomain>/login
+name_attribute_path = full_name
+login_attribute_path = username
 email_attribute_path = email
-name_attribute_path = name
-role_attribute_path = contains(roles[*], 'admin') && 'Admin' || contains(roles[*], 'editor') && 'Editor' || 'Viewer'
+role_attribute_path = contains(roles[], 'grafanaadmin') && 'GrafanaAdmin' || contains(roles[*], 'admin') && 'Admin' || contains(roles[*], 'editor') && 'Editor' || 'Viewer'
 ```
 
 Replace the placeholders:
