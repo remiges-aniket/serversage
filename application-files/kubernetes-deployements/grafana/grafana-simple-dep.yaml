@@ -15,13 +15,14 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: aniketxshinde/serversage:0.1.0
+        image: aniketxshinde/serversage:latest
         # image: grafana/grafana:12.0.0
+        imagePullPolicy: IfNotPresent
         env:
           - name: GF_SECURITY_ADMIN_USER
             value: "admin"
           - name: GF_SECURITY_ADMIN_PASSWORD
-            value: "serversage"
+            value: "admin"
           - name: GF_PLUGINS_PREINSTALL
             value: "grafana-llm-app,grafana-oncall-app"
         resources:
