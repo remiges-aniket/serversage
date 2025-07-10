@@ -1,0 +1,51 @@
+2025-07-10 10:43:37 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:43:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:43:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:43:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:43:37 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:43:40 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Pool stats (total=10, active=0, idle=10, waiting=0)
+2025-07-10 10:43:40 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Fill pool skipped, pool has sufficient level or currently being filled (queueDepth=0).
+2025-07-10 10:43:52 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:43:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:43:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:43:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:43:52 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:44:07 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:44:07 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:44:07 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:44:07 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:44:07 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:44:10 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Pool stats (total=10, active=0, idle=10, waiting=0)
+2025-07-10 10:44:10 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Fill pool skipped, pool has sufficient level or currently being filled (queueDepth=0).
+2025-07-10 10:44:22 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:44:22 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:44:22 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:44:22 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:44:22 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:44:37 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:44:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:44:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:44:37 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:44:37 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:44:40 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Pool stats (total=10, active=0, idle=10, waiting=0)
+2025-07-10 10:44:40 [HikariPool-1 housekeeper] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Fill pool skipped, pool has sufficient level or currently being filled (queueDepth=0).
+2025-07-10 10:44:52 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - GET "/actuator/prometheus", parameters={}
+2025-07-10 10:44:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.RequestResponseBodyMethodProcessor - Read "application/octet-stream" to []
+2025-07-10 10:44:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Found 'Content-Type:application/openmetrics-text;version=1.0.0;charset=utf-8' in response
+2025-07-10 10:44:52 [pool-2-thread-8] DEBUG [,] o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing ["# TYPE jvm_gc_memory_promoted_bytes counter<EOL># HELP jvm_gc_memory_promoted_bytes Count of positive in (truncated)..."]
+2025-07-10 10:44:52 [pool-2-thread-8] DEBUG [,] o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-07-10 10:45:02 [SpringApplicationShutdownHook] INFO  [,] o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-07-10 10:45:03 [SpringApplicationShutdownHook] INFO  [,] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-07-10 10:45:03 [SpringApplicationShutdownHook] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Before shutdown stats (total=10, active=0, idle=10, waiting=0)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@8acfb0c: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@2786754: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@21fdfadd: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@2f3a1092: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@2b0591ad: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@6e071aa9: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@20622ea6: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@5f2314b8: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@58ac7e08: (connection evicted)
+2025-07-10 10:45:03 [HikariPool-1 connection closer] DEBUG [,] com.zaxxer.hikari.pool.PoolBase - HikariPool-1 - Closing connection org.postgresql.jdbc.PgConnection@6afe2007: (connection evicted)
+2025-07-10 10:45:03 [SpringApplicationShutdownHook] DEBUG [,] com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - After shutdown stats (total=0, active=0, idle=0, waiting=0)
+2025-07-10 10:45:03 [SpringApplicationShutdownHook] INFO  [,] com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

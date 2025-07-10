@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # OpenTelemetry Collector metrics
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    scrape_interval: 10s
+
+  # Application metrics (your local app)
+  - job_name: 'serversage-app'
+    static_configs:
+      - targets: ['172.17.0.1:8081']  # Docker host IP
+    scrape_interval: 15s
+    metrics_path: /actuator/prometheus
+
+# Enable exemplar storage
+storage:
+  exemplars:
+    max_exemplars: 100000

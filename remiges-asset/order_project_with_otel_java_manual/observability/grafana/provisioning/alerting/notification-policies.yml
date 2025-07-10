@@ -1,0 +1,78 @@
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: default-receiver
+    group_by:
+      - grafana_folder
+      - alertname
+    group_wait: 10s
+    group_interval: 5m
+    repeat_interval: 12h
+    routes:
+      - receiver: critical-alerts
+        matchers:
+          - severity = critical
+        group_wait: 5s
+        group_interval: 2m
+        repeat_interval: 5m
+      - receiver: warning-alerts
+        matchers:
+          - severity = warning
+        group_wait: 10s
+        group_interval: 5m
+        repeat_interval: 30m
+
+contactPoints:
+  - orgId: 1
+    name: default-receiver
+    receivers:
+      - uid: default-webhook
+        type: webhook
+        settings:
+          url: http://localhost:8081/api/alerts/webhook
+          httpMethod: POST
+          title: 'ServerSage Alert: {{ .GroupLabels.alertname }}'
+          message: |
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Severity: {{ .Labels.severity }}
+            Service: {{ .Labels.service }}
+            {{ end }}
+
+  - orgId: 1
+    name: critical-alerts
+    receivers:
+      - uid: critical-webhook
+        type: webhook
+        settings:
+          url: http://localhost:8081/api/alerts/critical
+          httpMethod: POST
+          title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+          message: |
+            🚨 CRITICAL ALERT 🚨
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Service: {{ .Labels.service }}
+            Component: {{ .Labels.component }}
+            Runbook: {{ .Annotations.runbook_url }}
+            {{ end }}
+
+  - orgId: 1
+    name: warning-alerts
+    receivers:
+      - uid: warning-webhook
+        type: webhook
+        settings:
+          url: http://localhost:8081/api/alerts/warning
+          httpMethod: POST
+          title: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+          message: |
+            ⚠️ WARNING ALERT ⚠️
+            {{ range .Alerts }}
+            Alert: {{ .Annotations.summary }}
+            Description: {{ .Annotations.description }}
+            Service: {{ .Labels.service }}
+            {{ end }}

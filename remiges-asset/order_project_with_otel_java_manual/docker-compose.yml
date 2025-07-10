@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: serversage-postgres
+    environment:
+      POSTGRES_DB: serversage
+      POSTGRES_USER: serversage
+      POSTGRES_PASSWORD: serversage123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U serversage"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - observability
+
+  # ServerSage Application with OpenTelemetry
+  serversage-app:
+    # build: .
+    # container_name: serversage-app
+    image: aniketxshinde/otel-demo:1.0.0
+    environment:
+      # Database configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/serversage
+      SPRING_DATASOURCE_USERNAME: serversage
+      SPRING_DATASOURCE_PASSWORD: serversage123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      
+      # OpenTelemetry configuration
+      OTEL_SERVICE_NAME: serversage
+      OTEL_SERVICE_VERSION: 1.0.0
+      OTEL_RESOURCE_ATTRIBUTES: service.name=serversage,service.version=1.0.0,deployment.environment=docker
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      
+      # Application configuration
+      SERVER_PORT: 8081
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+      LOGGING_LEVEL_TECH_REMIGES_SERVERSAGE: INFO
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: DEBUG
+      LOGGING_LEVEL_ORG_HIBERNATE_TYPE_DESCRIPTOR_SQL_BASICBINDER: TRACE
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - observability
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.129.1
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus exporter metrics
+    depends_on:
+      - tempo
+      - prometheus
+    networks:
+      - observability
+
+  # Tempo for Traces
+  tempo:
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200"   # tempo
+      - "4327:4317"   # OTLP gRPC (mapped to avoid conflict)
+      - "4328:4318"   # OTLP HTTP (mapped to avoid conflict)
+    user: "0:0"  # Run as root to avoid permission issues
+    networks:
+      - observability
+
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--enable-feature=exemplar-storage'
+      - '--web.enable-remote-write-receiver'
+    networks:
+      - observability
+
+  # Grafana for Dashboards
+  grafana:
+    image: aniketxshinde/serversage:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana-dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - observability
+
+  # Loki for Logs
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    networks:
+      - observability
+
+  # K6 Load Testing
+  k6:
+    image: grafana/k6:0.47.0
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+    volumes:
+      - ./k6-tests:/scripts
+    command: sleep 3600  # Keep container running
+    networks:
+      - observability
+
+networks:
+  observability:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  prometheus-data:
+  grafana-data:
+  tempo-data:
+  loki-data:

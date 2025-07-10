@@ -1,0 +1,6 @@
+tech/remiges/serversage/ServersageApplicationTests.class
+tech/remiges/serversage/service/UserServiceIntegrationTest.class
+tech/remiges/serversage/controller/UserControllerIntegrationTest.class
+tech/remiges/serversage/service/UserServiceTest.class
+tech/remiges/serversage/observability/ObservabilityServiceTest.class
+tech/remiges/serversage/controller/UserControllerTest.class

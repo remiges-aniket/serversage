@@ -1,0 +1,76 @@
+{
+  "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+  },
+  "fieldConfig": {
+    "defaults": {
+      "color": {
+        "mode": "thresholds"
+      },
+      "custom": {
+        "align": "auto",
+        "cellOptions": {
+          "type": "auto"
+        },
+        "inspect": false
+      },
+      "mappings": [
+        {
+          "options": {
+            "0": {
+              "color": "green",
+              "index": 0,
+              "text": "No Alerts"
+            }
+          },
+          "type": "value"
+        }
+      ],
+      "thresholds": {
+        "mode": "absolute",
+        "steps": [
+          {
+            "color": "green",
+            "value": null
+          },
+          {
+            "color": "yellow",
+            "value": 1
+          },
+          {
+            "color": "red",
+            "value": 5
+          }
+        ]
+      },
+      "unit": "short"
+    },
+    "overrides": []
+  },
+  "gridPos": {
+    "h": 6,
+    "w": 12,
+    "x": 0,
+    "y": 18
+  },
+  "id": 8,
+  "options": {
+    "showHeader": true
+  },
+  "pluginVersion": "10.0.0",
+  "targets": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "expr": "ALERTS{alertstate=\"firing\"}",
+      "format": "table",
+      "instant": true,
+      "refId": "A"
+    }
+  ],
+  "title": "Active Alerts",
+  "type": "table"
+}
