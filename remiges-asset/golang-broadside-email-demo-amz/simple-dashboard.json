@@ -1,0 +1,86 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "📧 Realistic Email Service Dashboard",
+    "tags": ["email", "realistic", "business"],
+    "timezone": "",
+    "panels": [
+      {
+        "id": 1,
+        "title": "📧 Total Emails",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(bs_email_ratio_total)",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "✅ Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "(sum(bs_email_ratio_total{status=\"sent\"}) / sum(bs_email_ratio_total)) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "📊 Provider Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (provider) (bs_email_provider_ratio_total)",
+            "refId": "A",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "📈 Status Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (status) (bs_email_ratio_total)",
+            "refId": "A",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "📈 Processing Rate by Provider",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "sum(rate(bs_email_ratio_total[1m])) by (provider) * 60",
+            "refId": "A",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 18}
+      }
+    ],
+    "time": {
+      "from": "now-15m",
+      "to": "now"
+    },
+    "refresh": "5s"
+  },
+  "overwrite": true
+}
