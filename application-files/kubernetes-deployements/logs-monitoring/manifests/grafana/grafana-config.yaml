@@ -98,6 +98,7 @@ data:
       "graphTooltip": 0,
       "id": 1,
       "links": [],
+      "liveNow": true,
       "panels": [
         {
           "datasource": {
@@ -107,7 +108,7 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
+                "mode": "thresholds"
               },
               "custom": {
                 "axisBorderShow": false,
@@ -115,28 +116,16 @@ data:
                 "axisColorMode": "text",
                 "axisLabel": "",
                 "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 20,
+                "fillOpacity": 46,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
                   "viz": false
                 },
-                "insertNulls": false,
-                "lineInterpolation": "smooth",
                 "lineWidth": 2,
-                "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
-                },
-                "showPoints": "never",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
                 },
                 "thresholdsStyle": {
                   "mode": "off"
@@ -156,7 +145,34 @@ data:
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "level"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "ERROR": {
+                            "color": "red",
+                            "index": 0
+                          },
+                          "WARN": {
+                            "color": "yellow",
+                            "index": 1
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -166,17 +182,27 @@ data:
           },
           "id": 1,
           "options": {
+            "barRadius": 0,
+            "barWidth": 0.97,
+            "colorByField": "level",
+            "fullHighlight": false,
+            "groupWidth": 0.7,
             "legend": {
               "calcs": [],
               "displayMode": "list",
               "placement": "bottom",
               "showLegend": true
             },
+            "orientation": "auto",
+            "showValue": "auto",
+            "stacking": "none",
             "tooltip": {
               "hideZeros": false,
-              "mode": "multi",
+              "mode": "single",
               "sort": "none"
-            }
+            },
+            "xTickLabelRotation": 0,
+            "xTickLabelSpacing": 0
           },
           "pluginVersion": "12.0.0",
           "targets": [
@@ -199,12 +225,12 @@ data:
               },
               "pluginVersion": "4.10.1",
               "queryType": "table",
-              "rawSql": "SELECT\n    toStartOfInterval(timestamp, INTERVAL 1 MINUTE) as time,\n    level,\n    count() as count\nFROM ${database}.${table}\nWHERE $__timeFilter(timestamp)\nGROUP BY time, level\nORDER BY time",
+              "rawSql": "SELECT\n    toStartOfInterval(timestamp, INTERVAL 5 MINUTE) as time,\n    level,\n    count() as count\nFROM ${database}.${table}\nWHERE $__timeFilter(timestamp)\nGROUP BY time, level\nORDER BY time",
               "refId": "A"
             }
           ],
           "title": "Log Volume by Level",
-          "type": "timeseries"
+          "type": "barchart"
         },
         {
           "datasource": {
@@ -881,6 +907,7 @@ data:
             "type": "datasource"
           },
           {
+            "allowCustomValue": true,
             "current": {
               "text": "fluentbit",
               "value": "fluentbit"
@@ -893,7 +920,7 @@ data:
             "name": "database",
             "options": [],
             "query": "SELECT database();\n\n\n\n\n\n\n",
-            "refresh": 1,
+            "refresh": 2,
             "regex": "",
             "type": "query"
           },
@@ -910,14 +937,14 @@ data:
             "name": "table",
             "options": [],
             "query": "SHOW TABLES FROM ${database};",
-            "refresh": 1,
+            "refresh": 2,
             "regex": "",
             "type": "query"
           }
         ]
       },
       "time": {
-        "from": "now-5m",
+        "from": "now-24h",
         "to": "now"
       },
       "timepicker": {},
