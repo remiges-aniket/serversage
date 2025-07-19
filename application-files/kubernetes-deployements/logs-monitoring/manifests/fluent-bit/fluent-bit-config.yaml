@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: logging
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         5
+        Log_Level     info
+        Daemon        off
+        Parsers_File  parsers.conf
+        HTTP_Server   On
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Parser            docker
+        DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL            https://kubernetes.default.svc:443
+        Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix     kube.var.log.containers.
+        Merge_Log           On
+        Keep_Log            Off
+        K8S-Logging.Parser  On
+        K8S-Logging.Exclude Off
+
+    [FILTER]
+        Name    nest
+        Match   *
+        Operation nest
+        Wildcard *
+        Nest_under log
+
+    [FILTER]
+        Name    lua
+        Match   *
+        script  /fluent-bit/etc/functions.lua
+        call    set_fields
+
+    [OUTPUT]
+        Name        http
+        Match       *
+        Host        ${CLICKHOUSE_HOST}
+        Port        ${CLICKHOUSE_PORT}
+        URI         /?query=INSERT+INTO+fluentbit.kube+FORMAT+JSONEachRow
+        Format      json_stream
+        Json_Date_Key timestamp
+        Json_Date_Format epoch
+        HTTP_User   ${CLICKHOUSE_USER}
+        HTTP_Passwd ${CLICKHOUSE_PASSWORD}
+        tls         ${CLICKHOUSE_TLS}
+        tls.verify  ${CLICKHOUSE_TLS_VERIFY}
+
+  parsers.conf: |
+    [PARSER]
+        Name   docker
+        Format json
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep On
+
+  functions.lua: |
+    function set_fields(tag, timestamp, record)
+        
+        -- Extract host and pod_name from kubernetes metadata
+        if record["log"] and record["log"]["kubernetes"] then
+            if record["log"]["log"] then
+                record["msg"] = record["log"]["log"]
+                record["log"]["log"] = nil
+            end
+
+            if record["log"]["kubernetes"]["host"] then
+                record["host"] = record["log"]["kubernetes"]["host"]
+                record["log"]["kubernetes"]["host"] = nil
+            end
+            
+            if record["log"]["kubernetes"]["pod_name"] then
+                record["pod_name"] = record["log"]["kubernetes"]["pod_name"]
+                record["log"]["kubernetes"]["pod_name"] = nil
+            end
+
+            if record["log"]["kubernetes"]["container_name"] then
+                record["container_name"] = record["log"]["kubernetes"]["container_name"]
+                record["log"]["kubernetes"]["container_name"] = nil
+            end
+
+            if record["log"]["kubernetes"]["namespace_name"] then
+                record["namespace_name"] = record["log"]["kubernetes"]["namespace_name"]
+                record["log"]["kubernetes"]["namespace_name"] = nil
+            end
+
+            if record["log"]["kubernetes"]["pod_ip"] then
+                record["pod_ip"] = record["log"]["kubernetes"]["pod_ip"]
+                record["log"]["kubernetes"]["pod_ip"] = nil
+            end
+
+            -- Initialize level to default INFO
+            record["level"] = "INFO"
+            -- Check for log levels in the 'msg' field (which now holds the log string)
+            local lower_msg = string.lower(record["msg"])
+            if string.find(lower_msg, "error") then
+                record["level"] = "ERROR"
+            elseif string.find(lower_msg, "warn") or string.find(lower_msg, "warning") then
+                record["level"] = "WARN"
+            elseif string.find(lower_msg, "debug") then
+                record["level"] = "DEBUG"
+            elseif string.find(lower_msg, "info") then
+                record["level"] = "INFO" -- Explicitly set, though it's the default
+            -- Add more levels if needed, e.g., "trace", "fatal"
+            end
+
+            -- Handle pod_labels tuple: Extract specific labels as dotted keys
+            -- ClickHouse expects keys like "pod_labels.app" for tuple elements in JSONEachRow
+            if record["log"]["kubernetes"]["labels"] then
+                if record["log"]["kubernetes"]["labels"] then
+                    record["pod_labels"] = record["log"]["kubernetes"]["labels"]
+                    record["log"]["kubernetes"]["labels"]= nil
+                end
+            end
+
+        end
+        return 2, timestamp, record
+    end

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-logger
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-logger
+  template:
+    metadata:
+      labels:
+        app: test-logger
+    spec:
+      containers:
+      - name: logger
+        image: busybox
+        command:
+        - /bin/sh
+        - -c
+        - |
+          while true; do
+            echo "INFO: This is a test log message at $(date)"
+            echo "DEBUG: More detailed information for debugging"
+            echo "ERROR: This is a simulated error message"
+            sleep 5
+          done
