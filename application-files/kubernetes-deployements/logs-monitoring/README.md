@@ -10,7 +10,7 @@ This repository contains a complete solution for collecting, storing, and visual
 ## Components
 
 1. **Fluent Bit**: Collects logs from Kubernetes pods and enriches them with metadata
-2. **ClickHouse**: Stores and indexes logs for fast querying
+2. **ClickHouse**: Stores and indexes logs for fast querying (7 days retention policy, refer init script for more)
 3. **Grafana**: Visualizes logs and provides alerting capabilities
 
 ## Directory Structure
